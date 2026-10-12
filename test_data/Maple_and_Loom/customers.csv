@@ -1,0 +1,13 @@
+﻿customer_id,customer_name,phone,email,city,customer_since
+CUST-1001,Aarav Mehta,9876501001,aarav.mehta@example.test,Pune,2023-02-14
+CUST-1002,Diya Shah,9876501002,diya.shah@example.test,Mumbai,2023-04-08
+CUST-1003,Kabir Nair,9876501003,kabir.nair@example.test,Nashik,2023-05-19
+CUST-1004,Mira Iyer,9876501004,mira.iyer@example.test,Pune,2023-07-02
+CUST-1005,Vivaan Rao,9876501005,vivaan.rao@example.test,Nagpur,2023-08-22
+CUST-1006,Anaya Kulkarni,9876501006,anaya.k@example.test,Mumbai,2023-09-03
+CUST-1007,Ishaan Desai,9876501007,ishaan.desai@example.test,Pune,2023-10-17
+CUST-1008,Sara Fernandes,9876501008,sara.f@example.test,Thane,2024-01-11
+CUST-1009,Reyansh Patil,9876501009,reyansh.p@example.test,Kolhapur,2024-02-06
+CUST-1010,Aditi Joshi,9876501010,aditi.joshi@example.test,Pune,2024-03-15
+CUST-1011,Neel Kapoor,,neel.kapoor@example.test,Mumbai,2024-04-21
+CUST-1012,  Tanvi Menon  ,9876501012,,Aurangabad,2024-06-09

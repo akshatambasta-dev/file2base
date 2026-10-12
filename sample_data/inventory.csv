@@ -1,0 +1,7 @@
+Stock Record ID,Product ID,Quantity Available,Warehouse,Last Count Date
+ST001,P301,24,Pune North,2026-09-01
+ST002,P302,11,Pune North,2026-09-01
+ST003,P303,4,Mumbai Central,2026-09-04
+ST004,P304,17,Nashik Depot,2026-09-06
+ST005,P305,19,Mumbai Central,2026-09-06
+ST006,P306,8,Pune North,2026-09-07

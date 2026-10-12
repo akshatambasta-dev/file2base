@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Review schema — File2Base{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="back-link" href="{{ url_for('index') }}">← New workspace</a><div class="eyebrow"><span class="eyebrow-line"></span> STEP 2 OF 3 · REVIEW</div><h1>Here’s what we found.</h1><p class="page-lede">Check the proposed tables, then keep only the connections that make sense. File2Base will run a separate safety check before creating your database.</p></div><div class="step-chip"><span>2</span> Review schema</div></div>
+<div class="progress-steps"><span class="complete"><b>1</b> Upload & analyze</span><i></i><span class="active"><b>2</b> Review structure</span><i></i><span><b>3</b> Safety check & create</span></div>
+<section class="metric-grid">
+  <div class="metric-card"><span class="metric-label">FILES ANALYZED</span><strong>{{ analysis.summary.file_count }}</strong><small>Excel & CSV inputs</small></div>
+  <div class="metric-card"><span class="metric-label">SOURCE RECORDS</span><strong>{{ "{:,}".format(analysis.summary.row_count) }}</strong><small>Across all files</small></div>
+  <div class="metric-card"><span class="metric-label">COLUMNS PROFILED</span><strong>{{ analysis.summary.column_count }}</strong><small>Types, nulls & uniqueness</small></div>
+  <div class="metric-card"><span class="metric-label">RELATIONSHIPS SUGGESTED</span><strong>{{ analysis.summary.relationship_count }}</strong><small>{{ analysis.summary.duplicate_rows }} exact duplicate rows detected</small></div>
+</section>
+
+<form action="{{ url_for('start_preflight', workspace_id=workspace_id) }}" method="post" id="schema-form">
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  <section class="content-section">
+    <div class="section-heading"><div><div class="section-kicker">SCHEMA PROPOSAL</div><h2>Source files & detected entities</h2><p>Table names are editable. Primary keys are proposed from uniqueness and completeness signals.</p></div><span class="count-pill">{{ analysis.tables|length }} tables</span></div>
+    <div class="table-proposal-grid">
+      {% for table in analysis.tables %}
+      <article class="table-proposal">
+        <div class="table-proposal-top"><div class="table-icon">▦</div><div class="file-meta"><strong>{{ table.filename }}</strong><small>{{ "{:,}".format(table.row_count) }} rows · {{ table.column_count }} columns</small></div><span class="file-ok">✓</span></div>
+        <label class="field-label" for="table_{{ table.table_name }}">DATABASE TABLE NAME</label>
+        <input class="table-name-input" id="table_{{ table.table_name }}" name="table_{{ table.table_name }}" value="{{ table.table_name }}" pattern="[A-Za-z_][A-Za-z0-9_]*" maxlength="55" required>
+        <label class="field-label field-label-spaced" for="primary_key_{{ table.table_name }}">ROW IDENTIFIER / PRIMARY KEY</label>
+        <select class="table-name-input key-select" id="primary_key_{{ table.table_name }}" name="primary_key_{{ table.table_name }}">
+          <option value="__generated__" {% if not table.primary_key %}selected{% endif %}>Generate a new row ID (safest if unsure)</option>
+          {% for col in table.columns if col.unique_ratio >= 0.98 and col.filled_ratio >= 0.98 %}
+          <option value="{{ col.name }}" {% if table.primary_key == col.name %}selected{% endif %}>{{ col.original_name }} · {{ (col.unique_ratio * 100)|round|int }}% unique</option>
+          {% endfor %}
+        </select>
+        <div class="column-list">
+          {% for col in table.columns %}
+          <div class="column-row"><div class="column-name"><span class="column-type">{% if col.sql_type == 'INTEGER' %}# {% elif col.sql_type == 'REAL' %}◈ {% else %}Aa {% endif %}</span><span>{{ col.original_name }}</span></div><div class="column-meta"><span class="type-pill">{{ col.sql_type }}</span>{% if col.is_primary_key %}<span class="key-pill">PK</span>{% endif %}<span class="null-pill">{{ col.null_pct }}% null</span></div></div>
+          {% endfor %}
+        </div>
+        {% if not table.primary_key %}<div class="inline-note">No reliable source key found. File2Base will add a generated row ID.</div>{% else %}<div class="pk-note">Primary key candidate: <strong>{{ table.primary_key }}</strong></div>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="content-section relationship-section">
+    <div class="section-heading"><div><div class="section-kicker">PREDICTED DATA MODEL</div><h2>Relationship map</h2><p>Each card represents a proposed table. Connector lines show the strongest detected links between files.</p></div><span class="count-pill">{{ analysis.tables|length }} entities</span></div>
+    <div class="relationship-map" id="relationship-map">
+      <svg class="relationship-map-lines" id="relationship-map-lines" aria-hidden="true"><defs><marker id="arrowhead" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#6d92d5"></polygon></marker></defs></svg>
+      <div class="relationship-map-nodes" id="relationship-map-nodes">
+        {% for table in analysis.tables %}
+        <div class="graph-node" data-table-name="{{ table.table_name }}"><div class="graph-node-top"><span class="graph-node-icon">▦</span><span class="graph-row-count">{{ table.row_count }} rows</span></div><strong>{{ table.table_name }}</strong><small>{% if table.primary_key %}PK · {{ table.primary_key }}{% else %}Generated row ID needed{% endif %}</small></div>
+        {% endfor %}
+      </div>
+    </div>
+    <script type="application/json" id="file2base-graph-data">{{ {"tables": analysis.tables|map(attribute="table_name")|list, "relationships": analysis.relationships}|tojson }}</script>
+  </section>
+
+  <section class="content-section relationship-section">
+    <div class="section-heading"><div><div class="section-kicker">RELATIONSHIP INTELLIGENCE</div><h2>Suggested connections</h2><p>Suggestions are based on field-name similarity, data-type compatibility and value overlap. Scores are heuristic rankings, not calibrated probabilities. Uncheck anything that doesn't look right.</p></div><span class="count-pill">{{ analysis.relationships|length }} candidates</span></div>
+    {% if analysis.relationships %}
+    <div class="relationship-controls"><span class="helper-copy">Tip: start with high-coverage connections. You can still create separate tables if you reject a suggestion.</span><div><button type="button" class="button button-quiet button-small" id="select-safe-links">Select constraint-safe</button><button type="button" class="button button-quiet button-small" id="clear-links">Clear all</button></div></div>
+    <div class="relationship-list">
+      {% for rel in analysis.relationships %}
+      <label class="relationship-card">
+        <input type="checkbox" name="relationship_ids" value="{{ rel.suggestion_id }}" {% if rel.confidence_pct >= 75 and rel.coverage >= 0.98 %}checked{% endif %}>
+        <div class="relation-main"><div class="relation-path"><span class="relation-table">{{ rel.source_table }}</span><span class="relation-column">.{{ rel.source_column }}</span><span class="relation-arrow">→</span><span class="relation-table">{{ rel.target_table }}</span><span class="relation-column">.{{ rel.target_column }}</span></div><p>{{ rel.reason }}</p><div class="coverage-line"><span>Distinct-value coverage</span><div class="coverage-track"><i style="width: {{ (rel.coverage * 100)|int }}%"></i></div><strong>{{ (rel.coverage * 100)|round|int }}%</strong></div></div>
+        <div class="confidence-box"><strong>{{ rel.confidence_pct }}%</strong><span>confidence</span><em class="{% if rel.enforceable %}status-safe{% else %}status-review{% endif %}">{% if rel.enforceable %}Constraint-safe{% else %}Review link{% endif %}</em></div>
+      </label>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">↔</div><h3>No confident relationships found</h3><p>The tables can still be created independently. Try files with shared IDs or customer/product identifiers to demonstrate relationship discovery.</p></div>
+    {% endif %}
+    <div class="relationship-legend"><span><i class="legend-dot green-dot"></i> Constraint-safe: all/near-all source values match the target key</span><span><i class="legend-dot amber-dot"></i> Review link: possible relationship; not enforced as a database constraint</span></div>
+  </section>
+
+  <div class="sticky-actions"><div><strong>Next: check migration safety</strong><small>Your source files will remain unchanged. The next screen checks keys, data quality and unmatched relationship values.</small></div><button type="submit" class="button button-primary button-large" id="create-db-button">Review migration plan <span>→</span></button></div>
+</form>
+<form action="{{ url_for('delete_workspace', workspace_id=workspace_id) }}" method="post" class="destructive-inline" data-confirm="Delete this workspace and all its uploaded/generated files?"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><button type="submit" class="subtle-link">Delete this workspace</button></form>
+{% endblock %}

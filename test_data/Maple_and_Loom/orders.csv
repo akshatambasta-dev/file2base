@@ -1,0 +1,15 @@
+﻿order_id,customer_id,order_date,order_status,payment_method,shipping_city,discount_code
+ORD-2001,CUST-1001,2025-01-08,Delivered,UPI,Pune,NEW5
+ORD-2002,CUST-1002,2025-01-11,Delivered,Card,Mumbai,
+ORD-2003,CUST-1003,2025-01-15,Delivered,UPI,Nashik,WINTER
+ORD-2004,CUST-1004,2025-01-19,Shipped,Card,Pune,
+ORD-2005,CUST-1001,2025-01-25,Delivered,Net Banking,Pune,LOYAL10
+ORD-2006,CUST-1005,2025-02-02,Delivered,UPI,Nagpur,
+ORD-2007,CUST-1006,2025-02-07,Processing,Card,Mumbai,SPRING
+ORD-2008,CUST-1007,2025-02-13,Delivered,UPI,Pune,
+ORD-2009,CUST-1008,2025-02-20,Cancelled,Card,Thane,
+ORD-2010,CUST-1009,2025-03-01,Delivered,UPI,Kolhapur,NEW5
+ORD-2011,CUST-1010,2025-03-06,Shipped,Net Banking,Pune,
+ORD-2012,CUST-1011,2025-03-12,Delivered,UPI,Mumbai,
+ORD-2013,CUST-1012,2025-03-16,Processing,Card,Aurangabad,FESTIVE
+ORD-2014,CUST-1002,2025-03-21,Delivered,UPI,Mumbai,

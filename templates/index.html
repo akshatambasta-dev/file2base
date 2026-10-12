@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}File2Base — From files to infrastructure{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">{% endblock %}
+{% block content %}
+<div class="lp-intro-screen" id="lp-intro-screen" role="button" tabindex="0" aria-label="Skip File2Base introduction">
+  <div class="lp-intro-meta"><span>File2Base — Concept presentation</span><span>S00</span></div>
+  <svg class="lp-block-wordmark lp-intro-wordmark" data-wordmark="intro" viewBox="0 0 53 7" role="img" aria-label="File2Base"></svg>
+  <div class="lp-intro-meta"><span>From files to infrastructure</span><span class="lp-intro-skip">Click to skip ↗</span></div>
+</div>
+<div class="lp-custom-cursor" id="lp-custom-cursor" aria-hidden="true"></div>
+<div class="lp-progress" aria-hidden="true"><span id="page-progress"></span></div>
+<header class="lp-nav">
+  <a class="lp-logo" href="#top" aria-label="File2Base, back to top"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a>
+  <nav class="lp-nav-links" aria-label="Presentation sections">
+    <a href="#problem" data-section="problem"><b>01</b><span>Problem</span></a>
+    <a href="#solution" data-section="solution"><b>02</b><span>Solution</span></a>
+    <a href="#how" data-section="how"><b>03</b><span>Process</span></a>
+    <a href="#concept" data-section="concept"><b>04</b><span>Product</span></a>
+    <a href="#engine" data-section="engine"><b>05</b><span>Intelligence</span></a>
+    <a href="#customers" data-section="customers"><b>06</b><span>Market</span></a>
+    <a href="#roadmap" data-section="roadmap"><b>08</b><span>Roadmap</span></a>
+  </nav>
+  <div class="lp-nav-right"><span id="section-counter">00 / 09</span><button type="button" id="nav-toggle" aria-expanded="false">Index</button><a class="lp-nav-cta" href="#workspace">Try prototype ↗</a></div>
+  <nav class="lp-mobile-menu" id="mobile-menu" hidden>
+    {% for sid, number, label in [('problem','01','The problem'),('solution','02','The solution'),('how','03','How it works'),('concept','04','Product concept'),('engine','05','Intelligence'),('customers','06','Customers'),('mvp','07','MVP'),('roadmap','08','Roadmap'),('vision','09','Vision'),('workspace','↗','Try the prototype')] %}
+    <a href="#{{ sid }}"><b>{{ number }}</b>{{ label }}</a>
+    {% endfor %}
+  </nav>
+</header>
+
+<section id="top" class="lp-hero lp-section">
+  <div class="lp-wrap">
+    <div class="lp-meta-row"><span>FILE2BASE</span><span>CONCEPT / FUNCTIONAL MVP</span><span class="lp-meta-long">AI-ASSISTED DATA STRUCTURING</span><span class="lp-meta-end">S01—S09</span></div>
+    <div class="lp-wordmark"><svg class="lp-block-wordmark lp-block-wordmark-hero" data-wordmark="hero" viewBox="0 0 53 7" role="img" aria-label="File2Base"></svg></div>
+    <div class="lp-hero-bottom">
+      <div class="lp-hero-head reveal"><h1>Your business runs on files.<br><span>It deserves a database.</span></h1></div>
+      <div class="lp-hero-aside reveal"><p>File2Base uses intelligent data analysis to turn fragmented business files into structured, scalable databases—with a human review step before migration.</p><div class="lp-hero-actions"><a class="lp-button lp-button-navy" href="#workspace">Try the working prototype <span>↘</span></a><a class="lp-button lp-button-line" href="#how">Explore how it works</a></div><div class="lp-micro-proof"><span><i></i> CSV + Excel</span><span><i></i> Schema review</span><span><i></i> Safety checks</span></div></div>
+    </div>
+  </div>
+  <div class="lp-scroll-hint"><span>SCROLL TO EXPLORE</span><i></i></div>
+</section>
+
+<section id="problem" class="lp-section lp-problem">
+  <div class="lp-scrollword" aria-hidden="true">FRAGMENTED</div>
+  <div class="lp-wrap">
+    <div class="lp-section-heading"><div class="lp-section-label"><b>S01</b><i></i><span>The problem</span></div><div><h2>Files were never meant to be <span class="lp-steel">infrastructure.</span></h2><p class="lp-intro">As businesses grow, spreadsheets become a patchwork of versions, repeated records and disconnected processes.</p></div></div>
+    <div class="lp-problem-grid">
+      <div class="lp-scatter" aria-label="Illustration of disconnected spreadsheet files">
+        <span class="lp-file lp-file-1">▤ customers_FINAL.xlsx</span><span class="lp-file lp-file-2">▤ customers_v2.xlsx</span><span class="lp-file lp-file-3">▤ sales_2024.csv</span><span class="lp-file lp-file-4">▤ Sales (copy).xlsx</span><span class="lp-file lp-file-5">▤ products.xlsx</span><span class="lp-file lp-file-6">▤ supplier list.xlsx</span><span class="lp-file lp-file-7">▤ orders_old.csv</span><div class="lp-scatter-center">? SINGLE SOURCE<br>OF TRUTH</div>
+      </div>
+      <ol class="lp-problem-list">
+        <li><b>01</b><div><h3>Fragmented spreadsheets</h3><p>Business data is spread across disconnected files.</p></div></li>
+        <li><b>02</b><div><h3>Duplicate records</h3><p>The same customer or product appears in multiple places.</p></div></li>
+        <li><b>03</b><div><h3>Inconsistent data</h3><p>Different formats and names describe the same things.</p></div></li>
+        <li><b>04</b><div><h3>Limited scalability</h3><p>Files strain as teams, workflows and data grow.</p></div></li>
+        <li><b>05</b><div><h3>Costly migration</h3><p>Moving into a database can require specialist effort.</p></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="solution" class="lp-section lp-solution">
+  <div class="lp-wrap">
+    <div class="lp-section-heading lp-heading-dark"><div class="lp-section-label"><b>S02</b><i></i><span>The solution</span></div><div><h2>Keep your files.<br>Gain a database.</h2><p class="lp-intro">Start with the business files you already use. File2Base profiles, connects and structures your data, then gives you the chance to review it before anything is migrated.</p></div></div>
+    <div class="lp-solution-steps">
+      {% for step in ['Upload existing business files','Analyse their contents','Infer likely relationships','Propose a database schema','Review and validate','Migrate into a database'] %}<div class="lp-solution-step"><span>{{ '%02d'|format(loop.index) }}</span><strong>{{ step }}</strong><i>↗</i></div>{% endfor %}
+    </div>
+    <div class="lp-solution-foot"><span>HUMAN REVIEW IS BUILT IN</span><p>Suggestions are not treated as certainty. You choose which proposed relationships to approve.</p></div>
+  </div>
+</section>
+
+<section id="how" class="lp-section lp-how">
+  <div class="lp-wrap">
+    <div class="lp-section-heading"><div class="lp-section-label"><b>S03</b><i></i><span>How it works</span></div><div><h2>Seven steps from file to database.</h2><p class="lp-intro">An explainable workflow from raw spreadsheets to a reviewable relational model.</p></div></div>
+    <div class="lp-how-grid"><div class="lp-step-detail"><div id="active-step-number">01</div><div class="lp-step-progress"><span id="active-step-progress"></span></div><h3 id="active-step-title">Upload</h3><p id="active-step-description">Excel and CSV business files are added to a workspace.</p><span class="lp-step-hint">SELECT A STEP TO EXPLORE</span></div>
+      <ol class="lp-step-list">
+        {% for title, description in [('Upload','Excel and CSV business files are added to a workspace.'),('Profile','Columns are profiled for types, formats, missing values and distinct values.'),('Understand','Fields are interpreted from their names and contents.'),('Infer relationships','Shared keys and matching values suggest how files connect.'),('Predict schema','A relational schema is proposed with entities, keys, types and links.'),('Validate','You review proposed structures and assess uncertain decisions.'),('Migrate','The approved model is written into a new SQLite database.') ] %}
+        <li><button type="button" class="lp-step-button{% if loop.first %} is-active{% endif %}" data-step="{{ loop.index0 }}"><b>{{ '%02d'|format(loop.index) }}</b><span><strong>{{ title }}</strong><small>{{ description }}</small></span><em>↗</em></button></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="concept" class="lp-section lp-concept">
+  <div class="lp-wrap">
+    <div class="lp-section-heading"><div class="lp-section-label"><b>S04</b><i></i><span>Product concept</span></div><div><h2>Four spreadsheets.<br><span>One connected model.</span></h2><p class="lp-intro">See how individual business files can be transformed into related entities and a proposed relational database.</p></div></div>
+    <div class="lp-schema-demo">
+      <div class="lp-schema-toolbar"><span class="lp-concept-badge"><i></i> ILLUSTRATIVE PRODUCT CONCEPT</span><div class="lp-stage-tabs" role="tablist" aria-label="Transformation stage">{% for stage in ['Files','Profile','Entities','Relationships','Schema'] %}<button type="button" role="tab" aria-selected="{% if loop.first %}true{% else %}false{% endif %}" data-stage="{{ loop.index0 }}">{{ '%02d'|format(loop.index) }} {{ stage }}</button>{% endfor %}<button type="button" id="schema-replay" class="lp-replay">↻ Replay</button></div></div>
+      <div class="lp-schema-viewport"><div class="lp-schema-canvas" id="schema-canvas" data-stage="0">
+        <svg class="lp-schema-lines" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden="true"><path d="M245 107 C320 107 315 205 390 205"/><path d="M745 107 C680 107 685 220 610 220"/><path d="M825 310 L825 180"/><text x="320" y="155">1 : N</text><text x="680" y="160">1 : N</text><text x="858" y="255">1 : N</text></svg>
+        <article class="lp-entity lp-entity-customers" data-entity="customers"><header><span class="lp-source-name">customers.xlsx</span><b class="lp-entity-name">CUSTOMER</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>customer_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>email</span><b></b></li><li><span>city</span><b></b></li></ul></article>
+        <article class="lp-entity lp-entity-sales" data-entity="sales"><header><span class="lp-source-name">sales.xlsx</span><b class="lp-entity-name">SALE</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>sale_id</span><b>PK</b></li><li><span>customer_id</span><b>FK</b></li><li><span>product_id</span><b>FK</b></li><li><span>quantity</span><b></b></li></ul></article>
+        <article class="lp-entity lp-entity-products" data-entity="products"><header><span class="lp-source-name">products.xlsx</span><b class="lp-entity-name">PRODUCT</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>product_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>unit_price</span><b></b></li><li><span>supplier_id</span><b>FK</b></li></ul></article>
+        <article class="lp-entity lp-entity-suppliers" data-entity="suppliers"><header><span class="lp-source-name">suppliers.xlsx</span><b class="lp-entity-name">SUPPLIER</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>supplier_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>contact</span><b></b></li></ul></article>
+        <div class="lp-schema-status">PROPOSED SCHEMA <span>→ SQLITE · REVIEW REQUIRED</span></div>
+      </div></div>
+      <p class="lp-schema-note">Hover or focus an entity to highlight connections. The schema shown is illustrative; it is not generated from your current data.</p>
+    </div>
+
+    <div class="lp-workspace" id="workspace">
+      <div class="lp-workspace-heading"><div><div class="lp-section-label"><b>LIVE DEMO</b><i></i><span>Functional prototype</span></div><h3>Bring your data together.</h3><p>Use your own non-sensitive CSV/Excel files or try the fictional sample business dataset.</p></div><span class="lp-status"><i></i> LOCAL WORKSPACE</span></div>
+      <div class="lp-workspace-grid">
+        <form class="lp-dropzone dropzone" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" id="upload-form">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><input type="file" id="file-input" name="files" accept=".csv,.xlsx" multiple hidden>
+          <div class="lp-upload-icon">↑</div><span class="lp-mini-label">STEP 01 / UPLOAD</span><h4>Upload business files</h4><p>Drop CSV or Excel files here, or <button type="button" class="lp-inline-button" id="browse-files">browse files</button>.</p>
+          <div class="lp-file-types"><span>.CSV</span><span>.XLSX</span><span>UP TO {{ max_files }} FILES</span><span>{{ max_upload_mb }} MB TOTAL</span></div>
+          <div id="selected-files" class="selected-files lp-selected-files" aria-live="polite"></div>
+          <button class="lp-button lp-button-navy lp-submit" type="submit" id="upload-submit" disabled>Analyze my files <span>→</span></button>
+        </form>
+        <div class="lp-workspace-or"><span>OR</span></div>
+        <form action="{{ url_for('demo') }}" method="post" class="lp-demo-card">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><span class="lp-mini-label"><i></i> RECOMMENDED FOR A FIRST LOOK</span><div class="lp-demo-symbol">▦</div><h4>Explore sample business data</h4><p>Analyze a fictional retailer's customers, products, orders, suppliers and inventory files.</p><div class="lp-demo-stats"><span><b>6</b> files</span><span><b>5+</b> entity types</span><span><b>Live</b> analysis</span></div><button class="lp-button lp-button-line" type="submit">Load sample workspace <span>→</span></button>
+        </form>
+      </div>
+      <div class="lp-privacy-note"><span>✓</span><p><strong>Designed for review, not blind automation.</strong> File2Base suggests a structure; you choose which relationships to approve before the database is generated.</p></div>
+      <p class="lp-data-warning"><strong>Prototype data notice:</strong> {% if is_hosted_demo %}This is a public evaluator demo. Use fictional or non-sensitive files only. Workspaces expire after about 6 hours and may disappear sooner during a restart or redeploy.{% else %}This local prototype is for testing. Avoid uploading confidential customer, financial, medical or employee data.{% endif %}</p>
+    </div>
+  </div>
+</section>
+
+<section id="engine" class="lp-section lp-engine">
+  <div class="lp-scrollword" aria-hidden="true">INTELLIGENCE</div><div class="lp-wrap">
+    <div class="lp-section-heading"><div class="lp-section-label"><b>S05</b><i></i><span>Intelligence engine</span></div><div><h2>Analysis you can see—and check.</h2><p class="lp-intro">A good migration should explain its reasoning and make uncertain decisions visible.</p></div></div>
+    <div class="lp-accordion">
+      {% for title, description, example in [('Data profiling','Column types, formats, completeness and value distributions.','type: date · 2% null'),('Semantic field understanding','Interpreting what a field represents from its name and contents.','“Cust Email” → email'),('Entity detection','Recognising business objects such as customers, products and suppliers.','→ Customer'),('Relationship inference','Detecting likely links between files through shared keys and matching values.','sales.customer_id ↔ customers.id'),('Schema prediction','Proposing tables, keys, data types and relationships.','CREATE TABLE customer (…)'),('Confidence-based validation','Highlighting uncertain decisions so a person can review them.','confidence: low → review')] %}
+      <article class="lp-accordion-item{% if loop.first %} is-open{% endif %}"><button type="button" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}"><b>{{ '%02d'|format(loop.index) }}</b><strong>{{ title }}</strong><span>+</span></button><div class="lp-accordion-content"><div class="lp-accordion-body"><p>{{ description }}</p><code>{{ example }}</code></div></div></article>
+      {% endfor %}
+    </div><p class="lp-footnote">EXAMPLES ARE ILLUSTRATIVE OF THE INTENDED APPROACH.</p>
+  </div>
+</section>
+
+<section id="customers" class="lp-section lp-customers">
+  <div class="lp-wrap"><div class="lp-section-heading lp-heading-dark"><div class="lp-section-label"><b>S06</b><i></i><span>Target customers</span></div><div><h2>Built for businesses that run on spreadsheets.</h2><p class="lp-intro">A practical first step for spreadsheet-heavy small and medium businesses that need a more structured foundation.</p></div></div>
+    <div class="lp-customer-grid">
+      {% for title, description in [('Retailers & distributors','Stock, orders, customers and suppliers kept in spreadsheets.'),('Small manufacturers','Parts, production and supplier records spread across files.'),('Education & service businesses','Students, clients, bookings and billing tracked in sheets.'),('Spreadsheet-heavy SMEs','Any small business whose operations have outgrown files.')] %}<article><span>C/0{{ loop.index }}</span><h3>{{ title }}</h3><p>{{ description }}</p></article>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="mvp" class="lp-section lp-mvp">
+  <div class="lp-wrap"><div class="lp-section-heading"><div class="lp-section-label"><b>S07</b><i></i><span>MVP & validation</span></div><div><h2>A focused first version.</h2><p class="lp-intro">The current prototype concentrates on structured business spreadsheets moving into a relational database.</p></div></div>
+    <div class="lp-mvp-grid">{% for k, v in [('INPUT','Excel / CSV'),('OUTPUT','SQLite database'),('REVIEW','Visual schema review'),('ACTION','Safety-checked migration')] %}<div><small>{{ k }}</small><strong>{{ v }}</strong></div>{% endfor %}</div>
+    <div class="lp-metrics"><div><span class="lp-concept-badge"><i></i> PLANNED — NOT YET MEASURED</span><h3>Validation metrics</h3></div><ul>{% for metric in ['Schema accuracy versus expert-designed schemas','Relationship detection quality','Time saved compared with manual migration','User review effort and corrections'] %}<li><b>M{{ loop.index }}</b>{{ metric }}</li>{% endfor %}</ul></div>
+  </div>
+</section>
+
+<section id="roadmap" class="lp-section lp-roadmap">
+  <div class="lp-wrap"><div class="lp-section-heading"><div class="lp-section-label"><b>S08</b><i></i><span>Roadmap</span></div><div><h2>From one migration to continuous intelligence.</h2><p class="lp-intro">Build a reliable core first, then expand data types and business integrations.</p></div></div>
+    <ol class="lp-roadmap-line">{% for title, description in [('MVP','Excel/CSV to SQLite with schema review and migration.'),('Unstructured documents','Extend analysis beyond spreadsheets to documents.'),('Integrations','Connect to the systems businesses already use.'),('Business tools','Build useful tools on top of structured data.'),('Continuous data intelligence','Keep structure and insight aligned as data evolves.')] %}<li><span>{{ 'Phase 1 · Current prototype' if loop.first else 'Phase ' ~ loop.index ~ ' · Planned' }}</span><h3>{{ title }}</h3><p>{{ description }}</p></li>{% endfor %}</ol>
+  </div>
+</section>
+
+<section id="vision" class="lp-section lp-vision">
+  <div class="lp-wrap"><div class="lp-section-label"><b>S09</b><i></i><span>Closing vision</span></div><div class="lp-vision-type"><h2>From files</h2><h2>to infrastructure.</h2></div><div class="lp-vision-bottom"><div><span>FILE2BASE / WORKING PROTOTYPE</span><p>Structure the data. Keep the human in control.</p></div><div class="lp-vision-actions"><a class="lp-button lp-button-light" href="#workspace">Try the prototype ↗</a><a class="lp-back-top" href="#top">↑ Back to start</a></div></div></div>
+</section>
+<footer class="lp-footer"><a class="lp-logo" href="#top" aria-label="File2Base"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a><span>FROM SCATTERED FILES TO STRUCTURED DATA</span><a href="#workspace">OPEN PROTOTYPE ↗</a></footer>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/landing.js') }}"></script>{% endblock %}

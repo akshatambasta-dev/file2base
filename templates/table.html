@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ data.table_name }} — File2Base{% endblock %}
+{% block content %}
+<div class="page-head compact-head"><div><a class="back-link" href="{{ url_for('database', workspace_id=workspace_id) }}">← Database overview</a><div class="eyebrow"><span class="eyebrow-line"></span> GENERATED TABLE</div><h1>{{ data.table_name }}</h1><p class="page-lede">{{ "{:,}".format(data.total) }} records · showing up to {{ data.limit }} rows.</p></div><div class="step-chip"><span>✓</span> Migrated</div></div>
+<section class="content-section"><div class="section-heading"><div><div class="section-kicker">TABLE PREVIEW</div><h2>Records</h2><p>Browse a sample of the generated database contents.</p></div><span class="count-pill">{{ data.columns|length }} columns</span></div>
+<div class="simple-table-wrap data-grid-wrap"><table class="simple-table data-table"><thead><tr>{% for col in data.columns %}<th>{{ col }}</th>{% endfor %}</tr></thead><tbody>{% for row in data.rows %}<tr>{% for col in data.columns %}<td>{% if row[col] is none %}<span class="null-value">NULL</span>{% else %}{{ row[col] }}{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{% if data.total == 0 %}<div class="empty-state"><p>This table has no rows.</p></div>{% endif %}
+<div class="table-preview-footer"><span>Showing {{ data.rows|length }} of {{ data.total }} rows</span><a href="{{ url_for('download_db', workspace_id=workspace_id) }}" class="subtle-link">Download database file ↓</a></div></section>
+{% endblock %}

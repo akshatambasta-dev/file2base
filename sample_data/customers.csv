@@ -1,0 +1,9 @@
+Customer ID,Customer Name,Phone,City,Customer Type
+C1001, Rahul Sharma ,9876501001,Pune,Retail
+C1002,Priya Mehta,9876501002,Mumbai,Retail
+C1003,Aarav Shah,9876501003,Pune,Wholesale
+C1004,Mira Joshi,,Nashik,Retail
+C1005,Kabir Nair,9876501005,Mumbai,Wholesale
+C1006,Anaya Kulkarni,9876501006,Pune,Retail
+C1007,Ishaan Rao,9876501007,Nagpur,Retail
+C1008,Sana Desai,9876501008,Pune,Wholesale

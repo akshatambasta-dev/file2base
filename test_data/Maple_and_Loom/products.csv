@@ -1,0 +1,9 @@
+﻿product_id,product_name,category,unit_price,supplier_id,reorder_level
+SKU-001,Oak Dining Chair,Dining,3499,SUP-001,12
+SKU-002,Compact Study Desk,Office,6499,SUP-001,8
+SKU-003,Three-Seater Sofa,Living Room,28999,SUP-003,4
+SKU-004,Queen Bed Frame,Bedroom,21999,SUP-001,5
+SKU-005,Floor Lamp,Lighting,3299,SUP-004,10
+SKU-006,Round Coffee Table,Living Room,7999,SUP-002,6
+SKU-007,Bar Stool,Dining,2799,SUP-002,10
+SKU-008,Cushion Set,Soft Furnishings,1199,SUP-003,15

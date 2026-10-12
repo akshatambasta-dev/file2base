@@ -1,0 +1,9 @@
+﻿inventory_id,product_id,warehouse,quantity_on_hand,last_restocked,stock_note
+INV-4001,SKU-001,Pune Central,18,2025-03-12,Healthy stock
+INV-4002,SKU-002,Pune Central,5,2025-03-10,Below reorder level
+INV-4003,SKU-003,Mumbai West,3,2025-03-02,Low stock
+INV-4004,SKU-004,Mumbai West,7,2025-03-09,Healthy stock
+INV-4005,SKU-005,Pune Central,15,2025-03-14,Healthy stock
+INV-4006,SKU-006,Nagpur Hub,4,2025-03-07,Below reorder level
+INV-4007,SKU-007,Nagpur Hub,11,2025-03-11,Healthy stock
+INV-4008,SKU-008,Mumbai West,0,2025-02-27,Out of stock

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Migration safety check — File2Base{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="back-link" href="{{ url_for('review', workspace_id=workspace_id) }}">← Back to schema review</a><div class="eyebrow"><span class="eyebrow-line"></span> STEP 3 OF 3 · SAFETY CHECK</div><h1>Review before we create it.</h1><p class="page-lede">This check does not change your files. It checks proposed keys, data quality and relationships before building a separate SQLite database.</p></div><div class="step-chip"><span>3</span> Safety check</div></div>
+<div class="progress-steps"><span class="complete"><b>1</b> Upload & analyze</span><i></i><span class="complete"><b>2</b> Review structure</span><i></i><span class="active"><b>3</b> Safety check & create</span></div>
+<section class="metric-grid">
+  <div class="metric-card"><span class="metric-label">TABLES TO CREATE</span><strong>{{ preflight.table_count }}</strong><small>Separate data entities</small></div>
+  <div class="metric-card"><span class="metric-label">RECORDS TO MIGRATE</span><strong>{{ "{:,}".format(preflight.row_count) }}</strong><small>Source rows, including duplicates</small></div>
+  <div class="metric-card"><span class="metric-label">LINKS REVIEWED</span><strong>{{ preflight.relationship_count }}</strong><small>{{ preflight.enforced_relationship_count }} eligible as foreign keys</small></div>
+  <div class="metric-card"><span class="metric-label">WARNINGS</span><strong class="{% if preflight.warning_count %}warning-number{% else %}good-number{% endif %}">{{ preflight.warning_count }}</strong><small>{{ preflight.blocker_count }} blocking issue(s)</small></div>
+</section>
+
+{% if preflight.blockers %}
+<section class="notice-panel notice-danger"><div class="notice-icon">!</div><div><h2>Migration paused</h2><p>Resolve these items before creating the database. You can return to the schema review and select a generated row ID if a source key is unsafe.</p></div></section>
+<div class="issue-list">{% for item in preflight.blockers %}<article class="issue-card issue-blocker"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p></article>{% endfor %}</div>
+{% else %}
+<section class="notice-panel notice-success"><div class="notice-icon">✓</div><div><h2>No blocking issues found</h2><p>The database can be created. Review the warnings below; they are not necessarily errors, but they deserve attention.</p></div></section>
+{% endif %}
+
+<section class="content-section">
+  <div class="section-heading"><div><div class="section-kicker">MIGRATION PLAN</div><h2>What will be created</h2><p>Original files are not edited or deleted. Data is copied into a newly generated database.</p></div><span class="count-pill">{{ preflight.table_count }} tables</span></div>
+  <div class="simple-table-wrap"><table class="simple-table"><thead><tr><th>Source file</th><th>New table</th><th>Rows</th><th>Identifier choice</th><th>Duplicate rows</th><th>Type warnings</th></tr></thead><tbody>{% for table in preflight.tables %}<tr><td>{{ table.source_name }}</td><td><strong>{{ table.table_name }}</strong></td><td>{{ "{:,}".format(table.row_count) }}</td><td>{% if table.generated_key %}<span class="status-pill status-pill-amber">Generated ID</span>{% else %}{{ table.primary_key }}{% endif %}</td><td>{{ table.duplicate_rows }}</td><td>{{ table.type_warning_count }}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section class="content-section">
+  <div class="section-heading"><div><div class="section-kicker">RELATIONSHIP CHECK</div><h2>Connections and unmatched values</h2><p>A connection is enforced as a foreign key only if the selected target key matches and all non-empty source values are covered.</p></div></div>
+  {% if preflight.relationships %}<div class="simple-table-wrap"><table class="simple-table"><thead><tr><th>Source</th><th>Target</th><th>Coverage</th><th>Unmatched rows</th><th>Action</th></tr></thead><tbody>{% for rel in preflight.relationships %}<tr><td><strong>{{ rel.source_table }}.{{ rel.source_column }}</strong></td><td>{{ rel.target_table }}.{{ rel.target_column }}</td><td>{{ rel.coverage_pct }}%</td><td>{{ rel.orphan_rows }}</td><td>{% if rel.will_enforce %}<span class="status-pill status-pill-green">Foreign key</span>{% else %}<span class="status-pill status-pill-amber">Recommendation only</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state compact-empty"><p>No relationships were selected. The tables will be created independently.</p></div>{% endif %}
+</section>
+
+{% if preflight.warnings %}
+<section class="content-section"><div class="section-heading"><div><div class="section-kicker">REVIEW NOTES</div><h2>Warnings to understand</h2><p>File2Base does not silently delete duplicate rows or guess at missing relationships.</p></div></div><div class="issue-list">{% for item in preflight.warnings %}<article class="issue-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p></article>{% endfor %}</div></section>
+{% endif %}
+
+<div class="sticky-actions"><div><strong>{% if preflight.can_migrate %}Ready to create the database?{% else %}Resolve the blocking issue first{% endif %}</strong><small>Migration runs again through the safety checks. If it fails, an existing successful database is preserved.</small></div>
+{% if preflight.can_migrate %}<form action="{{ url_for('create', workspace_id=workspace_id) }}" method="post" class="confirm-migration-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><label class="confirm-label"><input type="checkbox" name="confirm_migration" value="yes" required><span>I reviewed the warnings and want to create this demo database.</span></label><button type="submit" class="button button-primary button-large" id="confirm-create-button">Create database <span>→</span></button></form>
+{% else %}<a href="{{ url_for('review', workspace_id=workspace_id) }}" class="button button-primary">Return to schema review <span>→</span></a>{% endif %}</div>
+<form action="{{ url_for('delete_workspace', workspace_id=workspace_id) }}" method="post" class="destructive-inline" data-confirm="Delete this workspace and all its uploaded/generated files?"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><button type="submit" class="subtle-link">Delete this workspace</button></form>
+{% endblock %}

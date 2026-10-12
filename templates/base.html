@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}File2Base{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block styles %}{% endblock %}
+</head>
+<body{% if request.endpoint == "index" %} class="lp-body"{% endif %}>
+  {% if request.endpoint != "index" %}
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="File2Base home">
+      <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+      <span>File<span class="brand-accent">2</span>Base</span>
+    </a>
+    <div class="topbar-right"><span class="env-dot"></span><span>Prototype workspace</span><span class="topbar-divider"></span><span class="privacy-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 6v5c0 4.7-3 8.1-7 10-4-1.9-7-5.3-7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>{% if is_hosted_demo %}Public demo{% else %}Local demo{% endif %}</span></div>
+  </header>
+  {% endif %}
+  <main class="{% if request.endpoint == 'index' %}lp-shell{% else %}page-shell{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  {% if request.endpoint != "index" %}<footer class="footer"><span>File2Base <span class="muted">· From scattered files to structured data</span></span><span class="footer-status"><i></i> Demo build</span></footer>{% endif %}
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
