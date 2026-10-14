@@ -30,6 +30,36 @@ class File2BaseWebTests(unittest.TestCase):
         rejected = self.client.post("/demo")
         self.assertEqual(rejected.status_code, 400)
 
+
+    def test_landing_design_motion_and_navigation_features(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn('id="section-prev"', html)
+        self.assertIn('id="section-next"', html)
+        self.assertIn('href="#mvp" data-section="mvp"', html)
+        self.assertIn('href="#vision" data-section="vision"', html)
+        self.assertIn('<span>sale_date</span>', html)
+        self.assertIn('class="lp-profiled"', html)
+        self.assertIn('img/file2base-mark.svg', html)
+
+        js_url = re.search(r'src="([^"]*landing\.js)"', html).group(1)
+        js = self.client.get(js_url).get_data(as_text=True)
+        self.assertIn('updateStepFromScroll', js)
+        self.assertIn('scheduleNextSchemaStage', js)
+        self.assertIn('updateVisionParallax', js)
+        self.assertIn("section-prev", js)
+
+        css_url = re.search(r'href="([^"]*landing\.css)"', html).group(1)
+        css = self.client.get(css_url).get_data(as_text=True)
+        self.assertIn('@keyframes lp-flow-dash', css)
+        self.assertIn('.lp-roadmap-line.is-inview:after', css)
+        self.assertIn('.lp-scatter:not(.is-inview) .lp-file-1', css)
+
+        favicon = self.client.get('/static/img/file2base-mark.svg')
+        self.assertEqual(favicon.status_code, 200)
+        self.assertIn('<svg', favicon.get_data(as_text=True))
+
     def test_demo_preflight_create_and_download_report(self):
         home = self.client.get("/")
         token = self.token(home.get_data(as_text=True))

@@ -42,3 +42,60 @@ html{scroll-behavior:smooth;scroll-padding-top:82px}body.lp-body{margin:0;backgr
 @media(max-width:760px){.lp-intro-screen{padding:24px}.lp-intro-meta{font-size:8px;letter-spacing:.12em}.lp-intro-wordmark{margin:0}}
 @media(hover:none),(pointer:coarse){.lp-custom-cursor{display:none!important}}
 @media(prefers-reduced-motion:reduce){.lp-intro-screen{display:none!important}.lp-block-cell.is-animated{animation:none!important;transform:none!important}.lp-wordmark .lp-block-wordmark-hero{opacity:1}.lp-custom-cursor{display:none!important}.lp-motion-reveal,.lp-motion-mask{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}}
+
+
+/* Restored details from the final Lovable animation design. */
+.lp-section-controls{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;border:1px solid rgba(32,33,38,.15);background:rgba(247,247,244,.9);backdrop-filter:blur(12px)}
+.lp-section-controls button{width:42px;height:38px;border:0;background:transparent;font:14px var(--lp-mono);cursor:pointer;transition:background .2s,color .2s}
+.lp-section-controls button+button{border-left:1px solid var(--lp-line)}
+.lp-section-controls button:hover,.lp-section-controls button:focus-visible{background:var(--lp-navy);color:white;outline:none}
+.lp-nav-links a{white-space:nowrap}
+.lp-nav-links a:focus-visible,.lp-section-controls button:focus-visible{outline:2px solid var(--lp-navy);outline-offset:2px}
+
+/* Spreadsheet scatter animation: start clustered and spread after entering the viewport. */
+.lp-scatter .lp-file{transition:left 1.2s cubic-bezier(.7,0,.2,1),top 1.2s cubic-bezier(.7,0,.2,1),transform 1.2s cubic-bezier(.7,0,.2,1);will-change:left,top,transform}
+.lp-scatter:not(.is-inview) .lp-file-1{left:50%;top:53%;transform:translate(-50%,-50%) rotate(-4deg)}
+.lp-scatter:not(.is-inview) .lp-file-2{left:50%;right:auto;top:53%;transform:translate(-50%,-50%) rotate(5deg)}
+.lp-scatter:not(.is-inview) .lp-file-3{left:50%;top:53%;transform:translate(-50%,-50%) rotate(3deg)}
+.lp-scatter:not(.is-inview) .lp-file-4{left:50%;right:auto;top:53%;transform:translate(-50%,-50%) rotate(-4deg)}
+.lp-scatter:not(.is-inview) .lp-file-5{left:50%;bottom:auto;top:53%;transform:translate(-50%,-50%) rotate(4deg)}
+.lp-scatter:not(.is-inview) .lp-file-6{left:50%;right:auto;bottom:auto;top:53%;transform:translate(-50%,-50%) rotate(2deg)}
+.lp-scatter:not(.is-inview) .lp-file-7{left:50%;top:53%;transform:translate(-50%,-50%) rotate(-1deg)}
+.lp-scatter.is-inview .lp-file{transition-delay:0ms}
+
+/* The five-step schema demo plays automatically once it is visible; users can still take control. */
+.lp-schema-lines path{stroke-dasharray:6 6}
+.lp-schema-canvas[data-stage="3"] .lp-schema-lines path,.lp-schema-canvas[data-stage="4"] .lp-schema-lines path{animation:lp-flow-dash 1.2s linear infinite}
+@keyframes lp-flow-dash{to{stroke-dashoffset:-24}}
+.lp-profiled{position:absolute;right:8px;bottom:8px;z-index:3;color:var(--lp-navy);font:8px var(--lp-mono);letter-spacing:.03em;opacity:0;transform:translateY(4px);transition:opacity .35s,transform .35s;pointer-events:none}
+.lp-schema-canvas[data-stage="1"] .lp-profiled{opacity:1;transform:none}
+.lp-schema-canvas[data-stage="2"] .lp-profiled,.lp-schema-canvas[data-stage="3"] .lp-profiled,.lp-schema-canvas[data-stage="4"] .lp-profiled{opacity:0}
+.lp-entity-sales li:last-child{color:#59606c}
+
+/* Animate the roadmap's active progress stroke in step with its milestone reveals. */
+.lp-roadmap-line:after{content:"";position:absolute;left:0;top:7px;width:0;height:1px;background:var(--lp-navy);transition:width 2s cubic-bezier(.2,.7,.1,1);pointer-events:none}
+.lp-roadmap-line.is-inview:after{width:100%}
+
+/* Closing typography uses the same opposing parallax as the Lovable source. */
+.lp-vision{overflow:hidden}
+.lp-vision-type h2{will-change:transform;transition:transform .08s linear}
+.lp-vision-brand>img{display:block;width:min(360px,45vw);height:auto}
+.lp-vision-brand p{margin-top:15px}
+
+@media(max-width:760px){
+  .lp-section-controls{right:12px;bottom:12px}
+  .lp-section-controls button{width:38px;height:36px}
+  .lp-nav-links{display:none}
+  .lp-vision-brand>img{width:min(260px,70vw)}
+  .lp-roadmap-line:after{left:0;top:0;width:1px;height:0;transition:height 2s cubic-bezier(.2,.7,.1,1)}
+  .lp-roadmap-line.is-inview:after{width:1px;height:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .lp-scatter .lp-file{transition:none!important}
+  .lp-scatter:not(.is-inview) .lp-file-1,.lp-scatter:not(.is-inview) .lp-file-2,.lp-scatter:not(.is-inview) .lp-file-3,.lp-scatter:not(.is-inview) .lp-file-4,.lp-scatter:not(.is-inview) .lp-file-5,.lp-scatter:not(.is-inview) .lp-file-6,.lp-scatter:not(.is-inview) .lp-file-7{left:auto;right:auto;top:auto;bottom:auto;transform:none}
+  .lp-schema-canvas[data-stage="3"] .lp-schema-lines path,.lp-schema-canvas[data-stage="4"] .lp-schema-lines path{animation:none!important}
+  .lp-roadmap-line:after{transition:none;width:100%}
+  .lp-vision-type h2{will-change:auto;transform:none!important}
+}
+
+@media(max-width:760px) and (prefers-reduced-motion:reduce){.lp-roadmap-line:after{width:1px;height:100%}}

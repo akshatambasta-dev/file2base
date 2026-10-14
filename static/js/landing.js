@@ -141,6 +141,14 @@
       if (element && element.getBoundingClientRect().top < window.innerHeight * 0.42) active = index;
     });
     if (counter) counter.textContent = `${String(active).padStart(2, '0')} / 09`;
+    const hero = document.getElementById('top');
+    const heroMark = document.querySelector('.lp-block-wordmark-hero');
+    if (hero && heroMark && !reduceMotion) {
+      const heroRect = hero.getBoundingClientRect();
+      const heroProgress = Math.min(1, Math.max(0, (window.innerHeight - heroRect.top) / (window.innerHeight + heroRect.height)));
+      heroMark.style.transform = `translateY(${heroProgress * -80}px)`;
+      heroMark.style.opacity = String(1 - Math.max(0, heroProgress - 0.45) * 2);
+    }
     document.querySelectorAll('.lp-scrollword').forEach((word) => {
       const rect = word.getBoundingClientRect();
       const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / (window.innerHeight + rect.height)));
@@ -216,21 +224,57 @@
     item.button.addEventListener('focus', () => setStep(index));
   });
 
+  // Match the Lovable step panel: the active step follows scroll progress through the list.
+  const howGrid = document.querySelector('.lp-how-grid');
+  const updateStepFromScroll = () => {
+    if (!howGrid || !stepData.length) return;
+    const rect = howGrid.getBoundingClientRect();
+    const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / (window.innerHeight + rect.height)));
+    const rawIndex = Math.floor(((progress - 0.25) / 0.5) * stepData.length);
+    setStep(Math.max(0, Math.min(stepData.length - 1, rawIndex)));
+  };
+  window.addEventListener('scroll', updateStepFromScroll, { passive: true });
+  window.addEventListener('resize', updateStepFromScroll);
+  updateStepFromScroll();
+
   const canvas = document.getElementById('schema-canvas');
-  const stageTabs = Array.from(document.querySelectorAll('[data-stage]'));
-  const stageButtons = stageTabs.filter((element) => element.tagName === 'BUTTON');
-  let replayTimer = null;
+  const stageButtons = Array.from(document.querySelectorAll('.lp-stage-tabs button[data-stage]'));
+  const replayButton = document.getElementById('schema-replay');
+  const lastSchemaStage = 4;
+  let currentSchemaStage = 0;
+  let schemaAutoEnabled = true;
+  let schemaIsInView = false;
+  let schemaTimer = null;
+
+  const clearSchemaTimer = () => {
+    if (schemaTimer !== null) window.clearTimeout(schemaTimer);
+    schemaTimer = null;
+  };
   const setSchemaStage = (stage) => {
     if (!canvas) return;
-    const normalized = Math.max(0, Math.min(4, Number(stage) || 0));
-    canvas.dataset.stage = String(normalized);
-    stageButtons.forEach((button) => button.setAttribute('aria-selected', String(Number(button.dataset.stage) === normalized)));
+    currentSchemaStage = Math.max(0, Math.min(lastSchemaStage, Number(stage) || 0));
+    canvas.dataset.stage = String(currentSchemaStage);
+    stageButtons.forEach((button) => {
+      button.setAttribute('aria-selected', String(Number(button.dataset.stage) === currentSchemaStage));
+    });
   };
+  const scheduleNextSchemaStage = () => {
+    clearSchemaTimer();
+    if (!schemaIsInView || !schemaAutoEnabled || !canvas || currentSchemaStage >= lastSchemaStage || reduceMotion) return;
+    // Match the Lovable pacing: a short profiling beat, then measured transitions.
+    const delay = currentSchemaStage === 0 ? 900 : 1400;
+    schemaTimer = window.setTimeout(() => {
+      setSchemaStage(currentSchemaStage + 1);
+      scheduleNextSchemaStage();
+    }, delay);
+  };
+
   stageButtons.forEach((button) => button.addEventListener('click', () => {
-    if (replayTimer) window.clearInterval(replayTimer);
-    replayTimer = null;
+    clearSchemaTimer();
+    schemaAutoEnabled = false;
     setSchemaStage(button.dataset.stage);
   }));
+
   if (canvas) {
     const entities = Array.from(canvas.querySelectorAll('.lp-entity'));
     const connected = {
@@ -261,21 +305,31 @@
       entity.setAttribute('role', 'group');
       entity.setAttribute('aria-label', `${entity.querySelector('.lp-entity-name')?.textContent || entity.querySelector('.lp-source-name')?.textContent || 'Data entity'} and its fields`);
     });
+
+    if ('IntersectionObserver' in window) {
+      const schemaObserver = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          schemaIsInView = true;
+          schemaObserver.disconnect();
+          if (reduceMotion) {
+            // Keep the final state available without auto-playing motion.
+            return;
+          }
+          scheduleNextSchemaStage();
+        }
+      }, { threshold: 0.3 });
+      schemaObserver.observe(canvas);
+    } else {
+      schemaIsInView = true;
+      if (!reduceMotion) scheduleNextSchemaStage();
+    }
   }
 
-  const replayButton = document.getElementById('schema-replay');
   if (replayButton) replayButton.addEventListener('click', () => {
-    if (replayTimer) window.clearInterval(replayTimer);
-    let stage = 0;
-    setSchemaStage(stage);
-    replayTimer = window.setInterval(() => {
-      stage += 1;
-      setSchemaStage(stage);
-      if (stage >= 4) {
-        window.clearInterval(replayTimer);
-        replayTimer = null;
-      }
-    }, reduceMotion ? 120 : 700);
+    clearSchemaTimer();
+    schemaAutoEnabled = true;
+    setSchemaStage(0);
+    scheduleNextSchemaStage();
   });
 
   document.querySelectorAll('.lp-accordion-item > button').forEach((button) => button.addEventListener('click', () => {
@@ -298,6 +352,76 @@
       if (marker) marker.textContent = '−';
     }
   }));
+
+  // The original concept animation gathers and then spreads the example spreadsheet files.
+  const scatter = document.querySelector('.lp-scatter');
+  if (scatter) {
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      scatter.classList.add('is-inview');
+    } else {
+      const scatterObserver = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          scatter.classList.add('is-inview');
+          scatterObserver.disconnect();
+        }
+      }, { threshold: 0.3 });
+      scatterObserver.observe(scatter);
+    }
+  }
+
+  // Reveal the navy roadmap stroke as the milestones enter view.
+  const roadmap = document.querySelector('.lp-roadmap-line');
+  if (roadmap) {
+    if (reduceMotion || !('IntersectionObserver' in window)) roadmap.classList.add('is-inview');
+    else {
+      const roadmapObserver = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          roadmap.classList.add('is-inview');
+          roadmapObserver.disconnect();
+        }
+      }, { threshold: 0.2 });
+      roadmapObserver.observe(roadmap);
+    }
+  }
+
+  // The closing typography slides in opposite directions as the section crosses the viewport.
+  const vision = document.getElementById('vision');
+  const visionHeadings = vision ? vision.querySelectorAll('.lp-vision-type h2') : [];
+  const updateVisionParallax = () => {
+    if (!vision || visionHeadings.length < 2) return;
+    if (reduceMotion) {
+      visionHeadings[0].style.transform = '';
+      visionHeadings[1].style.transform = '';
+      return;
+    }
+    const rect = vision.getBoundingClientRect();
+    const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / (window.innerHeight + rect.height)));
+    visionHeadings[0].style.transform = `translateX(${(0.6 - progress) * 20}%)`;
+    visionHeadings[1].style.transform = `translateX(${(progress - 0.6) * 20}%)`;
+  };
+  window.addEventListener('scroll', updateVisionParallax, { passive: true });
+  window.addEventListener('resize', updateVisionParallax);
+  updateVisionParallax();
+
+  // Visible fixed controls mirror the keyboard shortcuts for section-by-section navigation.
+  const sectionPrev = document.getElementById('section-prev');
+  const sectionNext = document.getElementById('section-next');
+  const getActiveSectionIndex = () => {
+    let active = 0;
+    sections.forEach((id, index) => {
+      const element = document.getElementById(id);
+      if (element && element.getBoundingClientRect().top < window.innerHeight * 0.42) active = index;
+    });
+    return active;
+  };
+  if (sectionPrev) sectionPrev.addEventListener('click', () => {
+    const active = getActiveSectionIndex();
+    document.getElementById(sections[Math.max(0, active - 1)])?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
+  if (sectionNext) sectionNext.addEventListener('click', () => {
+    const active = getActiveSectionIndex();
+    document.getElementById(sections[Math.min(sections.length - 1, active + 1)])?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
 
   // Allow keyboard users to navigate sections without interfering with form input.
   window.addEventListener('keydown', (event) => {

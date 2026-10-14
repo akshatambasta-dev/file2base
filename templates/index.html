@@ -18,7 +18,9 @@
     <a href="#concept" data-section="concept"><b>04</b><span>Product</span></a>
     <a href="#engine" data-section="engine"><b>05</b><span>Intelligence</span></a>
     <a href="#customers" data-section="customers"><b>06</b><span>Market</span></a>
+    <a href="#mvp" data-section="mvp"><b>07</b><span>MVP</span></a>
     <a href="#roadmap" data-section="roadmap"><b>08</b><span>Roadmap</span></a>
+    <a href="#vision" data-section="vision"><b>09</b><span>Vision</span></a>
   </nav>
   <div class="lp-nav-right"><span id="section-counter">00 / 09</span><button type="button" id="nav-toggle" aria-expanded="false">Index</button><a class="lp-nav-cta" href="#workspace">Try prototype ↗</a></div>
   <nav class="lp-mobile-menu" id="mobile-menu" hidden>
@@ -27,6 +29,10 @@
     {% endfor %}
   </nav>
 </header>
+<div class="lp-section-controls" role="group" aria-label="Navigate presentation sections">
+  <button type="button" id="section-prev" aria-label="Previous section (P or left bracket)" title="Previous section (P / [)">↑</button>
+  <button type="button" id="section-next" aria-label="Next section (N or right bracket)" title="Next section (N / ])">↓</button>
+</div>
 
 <section id="top" class="lp-hero lp-section">
   <div class="lp-wrap">
@@ -89,10 +95,10 @@
       <div class="lp-schema-toolbar"><span class="lp-concept-badge"><i></i> ILLUSTRATIVE PRODUCT CONCEPT</span><div class="lp-stage-tabs" role="tablist" aria-label="Transformation stage">{% for stage in ['Files','Profile','Entities','Relationships','Schema'] %}<button type="button" role="tab" aria-selected="{% if loop.first %}true{% else %}false{% endif %}" data-stage="{{ loop.index0 }}">{{ '%02d'|format(loop.index) }} {{ stage }}</button>{% endfor %}<button type="button" id="schema-replay" class="lp-replay">↻ Replay</button></div></div>
       <div class="lp-schema-viewport"><div class="lp-schema-canvas" id="schema-canvas" data-stage="0">
         <svg class="lp-schema-lines" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden="true"><path d="M245 107 C320 107 315 205 390 205"/><path d="M745 107 C680 107 685 220 610 220"/><path d="M825 310 L825 180"/><text x="320" y="155">1 : N</text><text x="680" y="160">1 : N</text><text x="858" y="255">1 : N</text></svg>
-        <article class="lp-entity lp-entity-customers" data-entity="customers"><header><span class="lp-source-name">customers.xlsx</span><b class="lp-entity-name">CUSTOMER</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>customer_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>email</span><b></b></li><li><span>city</span><b></b></li></ul></article>
-        <article class="lp-entity lp-entity-sales" data-entity="sales"><header><span class="lp-source-name">sales.xlsx</span><b class="lp-entity-name">SALE</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>sale_id</span><b>PK</b></li><li><span>customer_id</span><b>FK</b></li><li><span>product_id</span><b>FK</b></li><li><span>quantity</span><b></b></li></ul></article>
-        <article class="lp-entity lp-entity-products" data-entity="products"><header><span class="lp-source-name">products.xlsx</span><b class="lp-entity-name">PRODUCT</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>product_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>unit_price</span><b></b></li><li><span>supplier_id</span><b>FK</b></li></ul></article>
-        <article class="lp-entity lp-entity-suppliers" data-entity="suppliers"><header><span class="lp-source-name">suppliers.xlsx</span><b class="lp-entity-name">SUPPLIER</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>supplier_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>contact</span><b></b></li></ul></article>
+        <article class="lp-entity lp-entity-customers" data-entity="customers"><span class="lp-profiled" aria-hidden="true">profiled ✓</span><header><span class="lp-source-name">customers.xlsx</span><b class="lp-entity-name">CUSTOMER</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>customer_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>email</span><b></b></li><li><span>city</span><b></b></li></ul></article>
+        <article class="lp-entity lp-entity-sales" data-entity="sales"><span class="lp-profiled" aria-hidden="true">profiled ✓</span><header><span class="lp-source-name">sales.xlsx</span><b class="lp-entity-name">SALE</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>sale_id</span><b>PK</b></li><li><span>customer_id</span><b>FK</b></li><li><span>product_id</span><b>FK</b></li><li><span>quantity</span><b></b></li><li><span>sale_date</span><b></b></li></ul></article>
+        <article class="lp-entity lp-entity-products" data-entity="products"><span class="lp-profiled" aria-hidden="true">profiled ✓</span><header><span class="lp-source-name">products.xlsx</span><b class="lp-entity-name">PRODUCT</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>product_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>unit_price</span><b></b></li><li><span>supplier_id</span><b>FK</b></li></ul></article>
+        <article class="lp-entity lp-entity-suppliers" data-entity="suppliers"><span class="lp-profiled" aria-hidden="true">profiled ✓</span><header><span class="lp-source-name">suppliers.xlsx</span><b class="lp-entity-name">SUPPLIER</b></header><div class="lp-file-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><ul><li><span>supplier_id</span><b>PK</b></li><li><span>name</span><b></b></li><li><span>contact</span><b></b></li></ul></article>
         <div class="lp-schema-status">PROPOSED SCHEMA <span>→ SQLITE · REVIEW REQUIRED</span></div>
       </div></div>
       <p class="lp-schema-note">Hover or focus an entity to highlight connections. The schema shown is illustrative; it is not generated from your current data.</p>
@@ -152,7 +158,7 @@
 </section>
 
 <section id="vision" class="lp-section lp-vision">
-  <div class="lp-wrap"><div class="lp-section-label"><b>S09</b><i></i><span>Closing vision</span></div><div class="lp-vision-type"><h2>From files</h2><h2>to infrastructure.</h2></div><div class="lp-vision-bottom"><div><span>FILE2BASE / WORKING PROTOTYPE</span><p>Structure the data. Keep the human in control.</p></div><div class="lp-vision-actions"><a class="lp-button lp-button-light" href="#workspace">Try the prototype ↗</a><a class="lp-back-top" href="#top">↑ Back to start</a></div></div></div>
+  <div class="lp-wrap"><div class="lp-section-label"><b>S09</b><i></i><span>Closing vision</span></div><div class="lp-vision-type"><h2>From files</h2><h2>to infrastructure.</h2></div><div class="lp-vision-bottom"><div class="lp-vision-brand"><img class="lp-vision-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark-light.svg') }}" alt="File2Base"><p>Structure the data. Keep the human in control.</p></div><div class="lp-vision-actions"><a class="lp-button lp-button-light" href="#workspace">Try the prototype ↗</a><a class="lp-back-top" href="#top">↑ Back to start</a></div></div></div>
 </section>
 <footer class="lp-footer"><a class="lp-logo" href="#top" aria-label="File2Base"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a><span>FROM SCATTERED FILES TO STRUCTURED DATA</span><a href="#workspace">OPEN PROTOTYPE ↗</a></footer>
 {% endblock %}
