@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Migration safety check — File2Base{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/prototype-features.css') }}">{% endblock %}
 {% block content %}
 <div class="page-head"><div><a class="back-link" href="{{ url_for('review', workspace_id=workspace_id) }}">← Back to schema review</a><div class="eyebrow"><span class="eyebrow-line"></span> STEP 3 OF 3 · SAFETY CHECK</div><h1>Review before we create it.</h1><p class="page-lede">This check does not change your files. It checks proposed keys, data quality and relationships before building a separate SQLite database.</p></div><div class="step-chip"><span>3</span> Safety check</div></div>
 <div class="progress-steps"><span class="complete"><b>1</b> Upload & analyze</span><i></i><span class="complete"><b>2</b> Review structure</span><i></i><span class="active"><b>3</b> Safety check & create</span></div>
@@ -8,6 +9,18 @@
   <div class="metric-card"><span class="metric-label">RECORDS TO MIGRATE</span><strong>{{ "{:,}".format(preflight.row_count) }}</strong><small>Source rows, including duplicates</small></div>
   <div class="metric-card"><span class="metric-label">LINKS REVIEWED</span><strong>{{ preflight.relationship_count }}</strong><small>{{ preflight.enforced_relationship_count }} eligible as foreign keys</small></div>
   <div class="metric-card"><span class="metric-label">WARNINGS</span><strong class="{% if preflight.warning_count %}warning-number{% else %}good-number{% endif %}">{{ preflight.warning_count }}</strong><small>{{ preflight.blocker_count }} blocking issue(s)</small></div>
+</section>
+
+
+<section class="prototype-feature" id="migration-preview" aria-labelledby="migration-preview-heading">
+  <div class="prototype-feature-head"><div><div class="prototype-kicker">LIVE PLAN / PROTOTYPE FEATURE 04</div><h2 id="migration-preview-heading">Migration preview</h2><p>This plan comes from the current workspace. It previews the actual tables, rows and eligible links before writing the database.</p></div><span class="count-pill">{% if preflight.can_migrate %}Ready for review{% else %}Blocked{% endif %}</span></div>
+  <div class="preview-operation-list">
+    <article class="preview-operation"><span>OPERATION 01</span><strong>Read source files</strong><p>{{ preflight.tables|length }} tables detected. Original CSV/XLSX files remain untouched.</p></article>
+    <article class="preview-operation"><span>OPERATION 02</span><strong>Create schema</strong><p>{{ preflight.table_count }} SQLite tables using your selected names and identifier choices.</p></article>
+    <article class="preview-operation"><span>OPERATION 03</span><strong>Copy records</strong><p>{{ "{:,}".format(preflight.row_count) }} source records are planned for migration, including duplicate rows.</p></article>
+    <article class="preview-operation"><span>OPERATION 04</span><strong>Validate database</strong><p>{{ preflight.enforced_relationship_count }} relationship(s) are eligible for foreign-key enforcement; integrity checks run before completion.</p></article>
+  </div>
+  <div class="quality-recommendations"><strong>Preflight status</strong><ul><li>{{ preflight.blocker_count }} blocking issue(s) and {{ preflight.warning_count }} warning(s) found.</li><li>The database is assembled in a temporary file and only replaces a previous successful result after validation.</li><li>The migration report records the results and audit timeline after a successful run.</li></ul></div>
 </section>
 
 {% if preflight.blockers %}
@@ -30,6 +43,12 @@
 {% if preflight.warnings %}
 <section class="content-section"><div class="section-heading"><div><div class="section-kicker">REVIEW NOTES</div><h2>Warnings to understand</h2><p>File2Base does not silently delete duplicate rows or guess at missing relationships.</p></div></div><div class="issue-list">{% for item in preflight.warnings %}<article class="issue-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p></article>{% endfor %}</div></section>
 {% endif %}
+
+
+<section class="prototype-feature" id="migration-audit" aria-labelledby="audit-heading">
+  <div class="prototype-feature-head"><div><div class="prototype-kicker">WORKSPACE EVENTS / AUDIT TRAIL</div><h2 id="audit-heading">Audit trail</h2><p>Server-recorded workflow events for this workspace. Entries contain workflow metadata and counts, not uploaded cell contents.</p></div><a class="button button-secondary button-small" href="{{ url_for('download_audit', workspace_id=workspace_id) }}">Download audit JSON ↓</a></div>
+  {% if audit_events %}<ol class="audit-timeline">{% for event in audit_events|reverse %}<li class="audit-event"><span class="audit-dot" aria-hidden="true"></span><div><strong>{{ event.event }}</strong><time>{{ event.timestamp }}</time>{% if event.details %}<p>{% for key, value in event.details.items() %}{{ key|replace('_', ' ')|title }}: {{ value }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}</div></li>{% endfor %}</ol>{% else %}<div class="audit-empty">No events have been recorded for this workspace yet.</div>{% endif %}
+</section>
 
 <div class="sticky-actions"><div><strong>{% if preflight.can_migrate %}Ready to create the database?{% else %}Resolve the blocking issue first{% endif %}</strong><small>Migration runs again through the safety checks. If it fails, an existing successful database is preserved.</small></div>
 {% if preflight.can_migrate %}<form action="{{ url_for('create', workspace_id=workspace_id) }}" method="post" class="confirm-migration-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><label class="confirm-label"><input type="checkbox" name="confirm_migration" value="yes" required><span>I reviewed the warnings and want to create this demo database.</span></label><button type="submit" class="button button-primary button-large" id="confirm-create-button">Create database <span>→</span></button></form>

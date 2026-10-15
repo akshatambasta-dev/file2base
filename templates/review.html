@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Review schema — File2Base{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/prototype-features.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/prototype-features.js') }}" defer></script>{% endblock %}
 {% block content %}
 <div class="page-head"><div><a class="back-link" href="{{ url_for('index') }}">← New workspace</a><div class="eyebrow"><span class="eyebrow-line"></span> STEP 2 OF 3 · REVIEW</div><h1>Here’s what we found.</h1><p class="page-lede">Check the proposed tables, then keep only the connections that make sense. File2Base will run a separate safety check before creating your database.</p></div><div class="step-chip"><span>2</span> Review schema</div></div>
 <div class="progress-steps"><span class="complete"><b>1</b> Upload & analyze</span><i></i><span class="active"><b>2</b> Review structure</span><i></i><span><b>3</b> Safety check & create</span></div>
@@ -8,6 +10,14 @@
   <div class="metric-card"><span class="metric-label">SOURCE RECORDS</span><strong>{{ "{:,}".format(analysis.summary.row_count) }}</strong><small>Across all files</small></div>
   <div class="metric-card"><span class="metric-label">COLUMNS PROFILED</span><strong>{{ analysis.summary.column_count }}</strong><small>Types, nulls & uniqueness</small></div>
   <div class="metric-card"><span class="metric-label">RELATIONSHIPS SUGGESTED</span><strong>{{ analysis.summary.relationship_count }}</strong><small>{{ analysis.summary.duplicate_rows }} exact duplicate rows detected</small></div>
+</section>
+
+
+<section class="prototype-feature" aria-labelledby="quality-heading" id="prototype-quality-score">
+  <div class="prototype-feature-head"><div><div class="prototype-kicker">LIVE PROFILE / PROTOTYPE FEATURE 01</div><h2 id="quality-heading">Data quality score</h2><p>Computed from this workspace’s actual file profiles. This is a transparent heuristic—not a guarantee that every value is correct.</p></div><span class="count-pill">{{ quality.table_count }} tables profiled</span></div>
+  <div class="quality-layout"><div class="quality-score-wrap"><div class="quality-ring" style="--quality-angle: {{ quality.score * 3.6 }}deg" role="img" aria-label="Heuristic data quality score: {{ quality.score }} out of 100"><div class="quality-ring-inner"><strong>{{ quality.score }}</strong><span>/100</span></div></div><div class="quality-score-label">Overall profile</div><div class="quality-status">{{ quality.label }}</div></div>
+    <div class="quality-breakdown">{% for label, value in [('Completeness', quality.completeness), ('Duplicate cleanliness', quality.duplicate_cleanliness), ('Identifier readiness', quality.identifier_readiness), ('Relationship coverage', quality.relationship_coverage)] %}<div class="quality-metric"><div class="quality-metric-top"><span>{{ label }}</span><strong>{{ value }}%</strong></div><div class="quality-track"><span style="width:{{ value }}%"></span></div></div>{% endfor %}</div></div>
+  <div class="quality-recommendations"><strong>Suggested next steps</strong><ul>{% for recommendation in quality.recommendations %}<li>{{ recommendation }}</li>{% endfor %}</ul></div>
 </section>
 
 <form action="{{ url_for('start_preflight', workspace_id=workspace_id) }}" method="post" id="schema-form">
@@ -39,7 +49,7 @@
   </section>
 
   <section class="content-section relationship-section">
-    <div class="section-heading"><div><div class="section-kicker">PREDICTED DATA MODEL</div><h2>Relationship map</h2><p>Each card represents a proposed table. Connector lines show the strongest detected links between files.</p></div><span class="count-pill">{{ analysis.tables|length }} entities</span></div>
+    <div class="section-heading"><div><div class="section-kicker">PREDICTED DATA MODEL</div><h2>Relationship map</h2><p>Each card represents a proposed table. Connector lines show the strongest detected links between files.</p><div class="schema-editor-note"><strong>Interactive schema editor</strong><span>Drag table cards to rearrange the canvas. Select or clear links below, or click a connector to toggle it. All changes are reviewed before migration.</span></div></div><span class="count-pill">{{ analysis.tables|length }} entities</span></div>
     <div class="relationship-map" id="relationship-map">
       <svg class="relationship-map-lines" id="relationship-map-lines" aria-hidden="true"><defs><marker id="arrowhead" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#6d92d5"></polygon></marker></defs></svg>
       <div class="relationship-map-nodes" id="relationship-map-nodes">
@@ -72,5 +82,21 @@
 
   <div class="sticky-actions"><div><strong>Next: check migration safety</strong><small>Your source files will remain unchanged. The next screen checks keys, data quality and unmatched relationship values.</small></div><button type="submit" class="button button-primary button-large" id="create-db-button">Review migration plan <span>→</span></button></div>
 </form>
+
+<section class="prototype-feature" id="prototype-assistant" aria-labelledby="assistant-heading">
+  <div class="prototype-feature-head"><div><div class="prototype-kicker">LIVE WORKSPACE / PROTOTYPE FEATURE 03</div><h2 id="assistant-heading">AI data migration assistant</h2><p>Ask about the files you just analyzed. This prototype answers locally from the detected profile; it does not call an external AI provider.</p></div><span class="count-pill">Workspace-aware demo</span></div>
+  <script type="application/json" id="file2base-assistant-context">{{ assistant_context|tojson }}</script>
+  <div class="assistant-grid"><div class="assistant-chat"><div class="assistant-chat-head"><div class="assistant-chat-brand"><span class="assistant-mark">F2</span><div><strong>Migration copilot</strong><small>Context: current workspace analysis</small></div></div><span class="assistant-mode">Rule-based demo</span></div>
+    <div class="assistant-messages" id="assistant-messages" aria-live="polite"><div class="assistant-message assistant">I’ve loaded the profile for this workspace. Ask me about missing values, identifiers, possible relationships, or the next migration step.</div></div>
+    <form class="assistant-compose" id="assistant-form"><input id="assistant-question" type="text" maxlength="240" autocomplete="off" placeholder="Ask about your data…" aria-label="Ask the data migration assistant" required><button type="submit" class="button button-primary">Ask ↗</button></form>
+  </div><aside class="assistant-suggestions"><h3>Try asking</h3><p>Example questions answered from the current analysis.</p>
+    <button type="button" class="assistant-prompt" data-assistant-prompt="What should I fix first?">What should I fix first? <span>↗</span></button>
+    <button type="button" class="assistant-prompt" data-assistant-prompt="Explain the strongest relationship">Explain the strongest relationship <span>↗</span></button>
+    <button type="button" class="assistant-prompt" data-assistant-prompt="Which table needs attention?">Which table needs attention? <span>↗</span></button>
+    <button type="button" class="assistant-prompt" data-assistant-prompt="What happens during migration?">What happens during migration? <span>↗</span></button>
+    <div class="assistant-disclaimer">Prototype disclosure: responses use rules and the current workspace analysis, not a hosted language model.</div>
+  </aside></div>
+</section>
+
 <form action="{{ url_for('delete_workspace', workspace_id=workspace_id) }}" method="post" class="destructive-inline" data-confirm="Delete this workspace and all its uploaded/generated files?"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><button type="submit" class="subtle-link">Delete this workspace</button></form>
 {% endblock %}

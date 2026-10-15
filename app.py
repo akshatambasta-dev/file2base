@@ -21,6 +21,7 @@ from werkzeug.utils import secure_filename
 from engine.analyzer import analyze_paths
 from engine.database_builder import browse_table, create_database, inspect_database
 from engine.preflight import build_migration_preflight
+from engine.quality import build_quality_summary
 
 ROOT = Path(__file__).resolve().parent
 INSTANCE = ROOT / "instance"
@@ -109,6 +110,31 @@ def save_json(path: Path, obj):
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
+def _record_audit_event(workspace_dir: Path, event: str, details: dict | None = None) -> list[dict]:
+    """Append compact workflow metadata; never record uploaded cell values."""
+    audit_path = workspace_dir / "audit.json"
+    try:
+        events = load_json(audit_path) if audit_path.exists() else []
+        if not isinstance(events, list):
+            events = []
+    except (OSError, ValueError, TypeError):
+        events = []
+    events.append({"timestamp": _utc_now(), "event": str(event), "details": details or {}})
+    save_json(audit_path, events)
+    return events
+
+
+def _read_audit_events(workspace_dir: Path) -> list[dict]:
+    audit_path = workspace_dir / "audit.json"
+    if not audit_path.exists():
+        return []
+    try:
+        events = load_json(audit_path)
+        return events if isinstance(events, list) else []
+    except (OSError, ValueError, TypeError):
+        return []
+
+
 def _csrf_token() -> str:
     token = session.get("_csrf_token")
     if not token:
@@ -152,6 +178,12 @@ def run_analysis(workspace_dir: Path, items: list[dict[str, str]]):
     analysis = analyze_paths(items)
     save_json(workspace_dir / "analysis.json", analysis)
     save_json(workspace_dir / "files.json", items)
+    _record_audit_event(workspace_dir, "Files analyzed", {
+        "file_count": analysis.get("summary", {}).get("file_count", len(items)),
+        "table_count": len(analysis.get("tables", [])),
+        "row_count": analysis.get("summary", {}).get("row_count", 0),
+        "relationship_candidates": len(analysis.get("relationships", [])),
+    })
     return analysis
 
 
@@ -192,6 +224,7 @@ def create_workspace() -> tuple[str, Path]:
     wpath = WORKSPACES / wid
     wpath.mkdir(parents=True, exist_ok=False)
     save_json(wpath / "workspace.json", {"created_at": _utc_now(), "expires_after_seconds": WORKSPACE_TTL_SECONDS})
+    _record_audit_event(wpath, "Workspace created", {"workflow": "File-to-database prototype"})
     return wid, wpath
 
 
@@ -305,7 +338,37 @@ def review(workspace_id):
     if not analysis_file.exists():
         abort(404)
     analysis = load_json(analysis_file)
-    return render_template("review.html", workspace_id=workspace_id, analysis=analysis)
+    quality = build_quality_summary(analysis)
+    assistant_context = {
+        "summary": analysis.get("summary", {}),
+        "tables": [{
+            "name": table.get("table_name", "table"),
+            "filename": table.get("filename", "source file"),
+            "rows": table.get("row_count", 0),
+            "columns": [{
+                "name": col.get("original_name", col.get("name", "column")),
+                "normalized_name": col.get("name", "column"),
+                "type": col.get("sql_type", "TEXT"),
+                "null_pct": col.get("null_pct", 0),
+                "unique_ratio": col.get("unique_ratio", 0),
+                "filled_ratio": col.get("filled_ratio", 1),
+            } for col in table.get("columns", [])],
+            "primary_key": table.get("primary_key"),
+            "duplicate_rows": table.get("duplicate_rows", 0),
+        } for table in analysis.get("tables", [])],
+        "relationships": [{
+            "source_table": rel.get("source_table"),
+            "source_column": rel.get("source_column"),
+            "target_table": rel.get("target_table"),
+            "target_column": rel.get("target_column"),
+            "confidence_pct": rel.get("confidence_pct", 0),
+            "coverage_pct": round(float(rel.get("coverage", 0) or 0) * 100),
+            "reason": rel.get("reason", ""),
+        } for rel in analysis.get("relationships", [])],
+        "quality": quality,
+    }
+    return render_template("review.html", workspace_id=workspace_id, analysis=analysis,
+                           quality=quality, assistant_context=assistant_context)
 
 
 @app.route("/preflight/<workspace_id>", methods=["POST"])
@@ -327,6 +390,14 @@ def start_preflight(workspace_id):
     preflight = _augment_integrity_issues(preflight, _source_integrity_issues(wpath))
     preflight["created_at"] = _utc_now()
     save_json(wpath / "preflight.json", preflight)
+    _record_audit_event(wpath, "Migration preview generated", {
+        "can_migrate": bool(preflight.get("can_migrate")),
+        "table_count": preflight.get("table_count", 0),
+        "row_count": preflight.get("row_count", 0),
+        "relationship_count": preflight.get("relationship_count", 0),
+        "warning_count": preflight.get("warning_count", 0),
+        "blocker_count": preflight.get("blocker_count", 0),
+    })
     return redirect(url_for("preflight", workspace_id=workspace_id))
 
 
@@ -342,7 +413,8 @@ def preflight(workspace_id):
     if issues:
         report = _augment_integrity_issues(report, issues)
         save_json(path, report)
-    return render_template("preflight.html", workspace_id=workspace_id, preflight=report)
+    return render_template("preflight.html", workspace_id=workspace_id, preflight=report,
+                           audit_events=_read_audit_events(wpath))
 
 
 @app.route("/create/<workspace_id>", methods=["POST"])
@@ -375,10 +447,18 @@ def create(workspace_id):
         result = create_database(str(wpath), analysis, relation_ids, table_overrides, primary_key_overrides)
     except Exception:
         logger.exception("Database migration failed")
+        _record_audit_event(wpath, "Migration attempt failed", {"reason": "Migration raised an error; source files were retained."})
         flash("Migration could not be completed. The last successful database, if any, was preserved. Review the safety notes and try again.", "error")
         return redirect(url_for("preflight", workspace_id=workspace_id))
 
     result["completed_at"] = _utc_now()
+    _record_audit_event(wpath, "SQLite database created", {
+        "table_count": result.get("table_count", 0),
+        "row_count": result.get("row_count", 0),
+        "relationship_count": len(result.get("relationships", [])),
+        "foreign_key_violations": result.get("foreign_key_violations", 0),
+    })
+    audit_events = _read_audit_events(wpath)
     report = {
         "product": "File2Base prototype",
         "completed_at": result["completed_at"],
@@ -391,6 +471,8 @@ def create(workspace_id):
         "relationships": current_plan.get("relationships", []),
         "warnings": current_plan.get("warnings", []),
         "blockers": current_plan.get("blockers", []),
+        "audit_trail": audit_events,
+        "data_quality": build_quality_summary(analysis),
         "note": "Relationship confidence is a heuristic ranking, not a calibrated probability. Review sensitive or business-critical migrations with a qualified person.",
     }
     save_json(wpath / "migration_report.json", report)
@@ -406,7 +488,12 @@ def database(workspace_id):
         return redirect(url_for("review", workspace_id=workspace_id))
     info = inspect_database(str(db_path))
     result = load_json(result_path)
-    return render_template("database.html", workspace_id=workspace_id, info=info, result=result)
+    audit_events = _read_audit_events(wpath)
+    migration_report_path = wpath / "migration_report.json"
+    migration_report = load_json(migration_report_path) if migration_report_path.exists() else {}
+    quality = migration_report.get("data_quality", {})
+    return render_template("database.html", workspace_id=workspace_id, info=info, result=result,
+                           audit_events=audit_events, quality=quality)
 
 
 @app.route("/database/<workspace_id>/table/<table_name>", methods=["GET"])
@@ -439,6 +526,17 @@ def download_report(workspace_id):
     if not report_path.exists():
         abort(404)
     return send_file(report_path, as_attachment=True, download_name="file2base_migration_report.json", mimetype="application/json")
+
+
+@app.route("/audit/<workspace_id>", methods=["GET"])
+def download_audit(workspace_id):
+    wpath = workspace_path(workspace_id)
+    events = _read_audit_events(wpath)
+    return app.response_class(
+        json.dumps({"workspace_id": workspace_id, "events": events}, indent=2, ensure_ascii=False),
+        mimetype="application/json",
+        headers={"Content-Disposition": 'attachment; filename="file2base_audit_trail.json"'},
+    )
 
 
 @app.route("/delete/<workspace_id>", methods=["POST"])
