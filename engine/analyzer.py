@@ -83,14 +83,40 @@ def _clean_value(value: Any) -> Any:
     return value
 
 
+CURRENCY_SYMBOLS = ("₹", "$", "€", "£", "¥")
+
+
+def clean_numeric_string(value: Any) -> str:
+    """Normalize numeric strings by stripping thousands separators and currency symbols."""
+    text = str(value).strip() if value is not None else ""
+    if not text:
+        return ""
+    text = text.replace(",", "")
+    for sym in CURRENCY_SYMBOLS:
+        text = text.replace(sym, "")
+    return text.strip()
+
+
 def read_business_file(path: str) -> DataTable:
     """Read CSV or the first worksheet of an XLSX file using pure-Python tooling."""
     ext = os.path.splitext(path)[1].lower()
     raw_rows: list[list[Any]] = []
     if ext == ".csv":
-        with open(path, "r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.reader(handle)
-            raw_rows = [row for row in reader]
+        # First attempt UTF-8 (with BOM handling), then fallback to latin-1 for broad compatibility
+        lines = None
+        for enc in ("utf-8-sig", "latin-1"):
+            try:
+                with open(path, "r", encoding=enc, newline="") as handle:
+                    reader = csv.reader(handle)
+                    lines = [row for row in reader]
+                break
+            except UnicodeDecodeError:
+                continue
+        if lines is None:
+            with open(path, "r", encoding="utf-8-sig", errors="replace", newline="") as handle:
+                reader = csv.reader(handle)
+                lines = [row for row in reader]
+        raw_rows = lines
     elif ext == ".xlsx":
         workbook = load_workbook(path, read_only=True, data_only=True)
         try:
@@ -181,7 +207,7 @@ def infer_sql_type(column_name: str, values: list[Any]) -> str:
     parsed: list[float] = []
     for value in vals:
         try:
-            parsed.append(float(value.replace(",", "").replace("₹", "").replace("$", "").strip()))
+            parsed.append(float(clean_numeric_string(value)))
         except ValueError:
             continue
     ratio = len(parsed) / len(vals)

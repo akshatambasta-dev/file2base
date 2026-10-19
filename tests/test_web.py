@@ -44,14 +44,18 @@ class File2BaseWebTests(unittest.TestCase):
         self.assertIn('img/file2base-mark.svg', html)
 
         js_url = re.search(r'src="([^"]*landing\.js)"', html).group(1)
-        js = self.client.get(js_url).get_data(as_text=True)
+        res_js = self.client.get(js_url)
+        js = res_js.get_data(as_text=True)
+        res_js.close()
         self.assertIn('updateStepFromScroll', js)
         self.assertIn('scheduleNextSchemaStage', js)
         self.assertIn('updateVisionParallax', js)
         self.assertIn("section-prev", js)
 
         css_url = re.search(r'href="([^"]*landing\.css)"', html).group(1)
-        css = self.client.get(css_url).get_data(as_text=True)
+        res_css = self.client.get(css_url)
+        css = res_css.get_data(as_text=True)
+        res_css.close()
         self.assertIn('@keyframes lp-flow-dash', css)
         self.assertIn('.lp-roadmap-line.is-inview:after', css)
         self.assertIn('.lp-scatter:not(.is-inview) .lp-file-1', css)
@@ -59,6 +63,7 @@ class File2BaseWebTests(unittest.TestCase):
         favicon = self.client.get('/static/img/file2base-mark.svg')
         self.assertEqual(favicon.status_code, 200)
         self.assertIn('<svg', favicon.get_data(as_text=True))
+        favicon.close()
 
     def test_demo_preflight_create_and_download_report(self):
         home = self.client.get("/")
@@ -97,6 +102,7 @@ class File2BaseWebTests(unittest.TestCase):
         report = self.client.get(f"/report/{workspace_id}")
         self.assertEqual(report.status_code, 200)
         self.assertEqual(report.get_json()["status"], "success")
+        report.close()
 
 
 if __name__ == "__main__":

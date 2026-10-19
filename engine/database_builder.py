@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sqlite3
 from typing import Any
 
-from engine.analyzer import read_business_file, slugify
+from engine.analyzer import clean_numeric_string, read_business_file, slugify
 
 
 def _quote(identifier: str) -> str:
@@ -22,18 +21,20 @@ def _convert_value(value: Any, sql_type: str):
         return None
     if sql_type == "INTEGER":
         try:
-            number = float(str(value).strip())
+            cleaned = clean_numeric_string(value)
+            number = float(cleaned)
             if number.is_integer():
                 return int(number)
             # Preserve fractional values rather than silently truncating them.
             # SQLite's dynamic typing can retain this numeric-looking value even
             # when the declared column affinity is INTEGER; preflight also warns.
-            return str(value).strip()
+            return cleaned
         except (ValueError, TypeError):
             return str(value).strip()
     if sql_type == "REAL":
         try:
-            return float(str(value).replace(",", "").strip())
+            cleaned = clean_numeric_string(value)
+            return float(cleaned)
         except (ValueError, TypeError):
             return str(value).strip()
     if hasattr(value, "isoformat"):

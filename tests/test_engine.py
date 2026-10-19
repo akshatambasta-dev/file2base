@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from engine.analyzer import analyze_paths
+from engine.analyzer import analyze_paths, clean_numeric_string
 from engine.database_builder import _convert_value, browse_table, create_database, inspect_database
 from engine.preflight import build_migration_preflight
 
@@ -48,6 +48,23 @@ class File2BaseEngineTests(unittest.TestCase):
     def test_numeric_conversion_does_not_truncate_fractional_values(self):
         self.assertEqual(_convert_value("10.5", "INTEGER"), "10.5")
         self.assertEqual(_convert_value("10", "INTEGER"), 10)
+
+    def test_currency_conversion_and_numeric_cleaning(self):
+        # clean_numeric_string handling of currencies and formatting
+        self.assertEqual(clean_numeric_string("$1,250.00"), "1250.00")
+        self.assertEqual(clean_numeric_string("₹ 4,500"), "4500")
+        self.assertEqual(clean_numeric_string("€99.95"), "99.95")
+        self.assertEqual(clean_numeric_string("£10"), "10")
+        self.assertEqual(clean_numeric_string("¥500"), "500")
+        self.assertEqual(clean_numeric_string(""), "")
+        self.assertEqual(clean_numeric_string(None), "")
+
+        # _convert_value consistency between INTEGER and REAL with currency symbols
+        self.assertEqual(_convert_value("$100", "INTEGER"), 100)
+        self.assertEqual(_convert_value("₹5,000", "INTEGER"), 5000)
+        self.assertEqual(_convert_value("€49.99", "REAL"), 49.99)
+        self.assertEqual(_convert_value("£1,234.56", "REAL"), 1234.56)
+        self.assertEqual(_convert_value("$10.5", "INTEGER"), "10.5")
 
     def test_relationships_can_be_rejected(self):
         with tempfile.TemporaryDirectory(prefix="file2base-test-") as temp:
@@ -123,6 +140,45 @@ class File2BaseEngineTests(unittest.TestCase):
             self.assertTrue(database_path.exists(), "the prior successful DB should survive a failed replacement")
             self.assertEqual(browse_table(str(database_path), "customers")["total"], 8)
             self.assertFalse(Path(str(database_path) + ".tmp").exists())
+
+    def test_quality_summary_calculation(self):
+        from engine.quality import build_quality_summary
+        mock_analysis = {
+            "tables": [
+                {
+                    "row_count": 100,
+                    "duplicate_rows": 0,
+                    "primary_key": "id",
+                    "columns": [
+                        {"filled_ratio": 1.0, "unique_ratio": 1.0},
+                        {"filled_ratio": 0.95, "unique_ratio": 0.5},
+                    ],
+                }
+            ],
+            "relationships": [
+                {"coverage": 1.0}
+            ],
+        }
+        summary = build_quality_summary(mock_analysis)
+        self.assertIn("score", summary)
+        self.assertGreaterEqual(summary["score"], 80)
+        self.assertEqual(summary["label"], "Strong starting point")
+        self.assertTrue(summary["is_heuristic"])
+
+    def test_latin1_encoded_csv_reading(self):
+        from engine.analyzer import read_business_file
+        with tempfile.NamedTemporaryFile(suffix=".csv", mode="wb", delete=False) as f:
+            # Contains Café and naïve in latin-1 (0xe9 and 0xef)
+            content = "id,name,city\n1,Caf\xe9,Paris\n2,na\xefve,Lyon\n".encode("latin-1")
+            f.write(content)
+            temp_path = f.name
+        try:
+            table = read_business_file(temp_path)
+            self.assertEqual(len(table), 2)
+            self.assertEqual(table.columns, ["id", "name", "city"])
+            self.assertIn("Caf", table.rows[0]["name"])
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

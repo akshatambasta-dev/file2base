@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from engine.analyzer import _text, read_business_file, slugify
+from engine.analyzer import _text, clean_numeric_string, read_business_file, slugify
 
 
 def _column_profile(table: dict[str, Any], normalized_name: str | None) -> dict[str, Any] | None:
@@ -94,7 +94,7 @@ def build_migration_preflight(
                 if not text:
                     continue
                 try:
-                    number = float(text.replace(",", "").replace("₹", "").replace("$", "").strip())
+                    number = float(clean_numeric_string(text))
                     if col["sql_type"] == "INTEGER" and not number.is_integer():
                         type_warning_count += 1
                 except ValueError:
