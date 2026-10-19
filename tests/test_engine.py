@@ -180,6 +180,30 @@ class File2BaseEngineTests(unittest.TestCase):
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
+    def test_business_insights_generation(self):
+        from engine.insights import generate_business_insights
+        with tempfile.TemporaryDirectory(prefix="file2base-insights-") as temp:
+            workspace = Path(temp)
+            upload_dir = workspace / "uploads"
+            upload_dir.mkdir()
+            files = []
+            for index, source in enumerate(sorted((ROOT / "sample_data").iterdir())):
+                target = upload_dir / source.name
+                shutil.copy2(source, target)
+                files.append({"id": f"ins{index}", "filename": source.name, "path": str(target)})
+            analysis = analyze_paths(files)
+            ids = [rel["suggestion_id"] for rel in analysis["relationships"]]
+            result = create_database(str(workspace), analysis, ids)
+            insights = generate_business_insights(result["db_path"])
+
+            self.assertTrue(insights["has_commercial_data"])
+            self.assertGreater(len(insights["kpis"]), 0)
+            # Confirms revenue KPI was calculated from orders table
+            labels = [k["label"] for k in insights["kpis"]]
+            self.assertIn("RECORDED REVENUE", labels)
+            self.assertIn("REGISTERED CUSTOMERS", labels)
+            self.assertGreater(len(insights["charts"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

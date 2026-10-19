@@ -20,6 +20,7 @@ from werkzeug.utils import secure_filename
 
 from engine.analyzer import analyze_paths
 from engine.database_builder import browse_table, create_database, inspect_database
+from engine.insights import generate_business_insights
 from engine.preflight import build_migration_preflight
 from engine.quality import build_quality_summary
 
@@ -492,8 +493,13 @@ def database(workspace_id):
     migration_report_path = wpath / "migration_report.json"
     migration_report = load_json(migration_report_path) if migration_report_path.exists() else {}
     quality = migration_report.get("data_quality", {})
+    try:
+        insights = generate_business_insights(str(db_path))
+    except Exception:
+        logger.exception("Could not generate business insights")
+        insights = None
     return render_template("database.html", workspace_id=workspace_id, info=info, result=result,
-                           audit_events=audit_events, quality=quality)
+                           audit_events=audit_events, quality=quality, insights=insights)
 
 
 @app.route("/database/<workspace_id>/table/<table_name>", methods=["GET"])

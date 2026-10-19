@@ -146,8 +146,8 @@
 
 <section id="mvp" class="lp-section lp-mvp">
   <div class="lp-wrap"><div class="lp-section-heading"><div class="lp-section-label"><b>S07</b><i></i><span>MVP & validation</span></div><div><h2>A focused first version.</h2><p class="lp-intro">The current prototype concentrates on structured business spreadsheets moving into a relational database.</p></div></div>
-    <div class="lp-mvp-grid">{% for k, v in [('INPUT','Excel / CSV'),('OUTPUT','SQLite database'),('REVIEW','Visual schema review'),('ACTION','Safety-checked migration')] %}<div><small>{{ k }}</small><strong>{{ v }}</strong></div>{% endfor %}</div>
-    <div class="lp-metrics"><div><span class="lp-concept-badge"><i></i> PLANNED — NOT YET MEASURED</span><h3>Validation metrics</h3></div><ul>{% for metric in ['Schema accuracy versus expert-designed schemas','Relationship detection quality','Time saved compared with manual migration','User review effort and corrections'] %}<li><b>M{{ loop.index }}</b>{{ metric }}</li>{% endfor %}</ul></div>
+    <div class="lp-mvp-grid">{% for k, v in [('INPUTS','Excel & CSV spreadsheets'),('OUTPUTS','Live Business Dashboard & SQLite'),('REVIEW','Plain-English schema check'),('SCALE','Connected business entities')] %}<div><small>{{ k }}</small><strong>{{ v }}</strong></div>{% endfor %}</div>
+    <div class="lp-metrics"><div><span class="lp-concept-badge"><i></i> WHY SMALL BUSINESSES MIGRATE</span><h3>Immediate scaling benefits</h3></div><ul>{% for metric in ['Instant cross-file reports without complex VLOOKUPs or formulas','Automatic reconciliation alerts for missing orders and catalog gaps','Single source of truth for orders, products, and customer profiles','Direct compatibility with reporting tools like PowerBI, Metabase & Retool'] %}<li><b>B{{ loop.index }}</b>{{ metric }}</li>{% endfor %}</ul></div>
   </div>
 </section>
 

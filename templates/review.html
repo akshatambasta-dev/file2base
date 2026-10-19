@@ -14,27 +14,27 @@
 
 
 <section class="prototype-feature" aria-labelledby="quality-heading" id="prototype-quality-score">
-  <div class="prototype-feature-head"><div><div class="prototype-kicker">LIVE PROFILE / PROTOTYPE FEATURE 01</div><h2 id="quality-heading">Data quality score</h2><p>Computed from this workspace’s actual file profiles. This is a transparent heuristic—not a guarantee that every value is correct.</p></div><span class="count-pill">{{ quality.table_count }} tables profiled</span></div>
-  <div class="quality-layout"><div class="quality-score-wrap"><div class="quality-ring" style="--quality-angle: {{ quality.score * 3.6 }}deg" role="img" aria-label="Heuristic data quality score: {{ quality.score }} out of 100"><div class="quality-ring-inner"><strong>{{ quality.score }}</strong><span>/100</span></div></div><div class="quality-score-label">Overall profile</div><div class="quality-status">{{ quality.label }}</div></div>
-    <div class="quality-breakdown">{% for label, value in [('Completeness', quality.completeness), ('Duplicate cleanliness', quality.duplicate_cleanliness), ('Identifier readiness', quality.identifier_readiness), ('Relationship coverage', quality.relationship_coverage)] %}<div class="quality-metric"><div class="quality-metric-top"><span>{{ label }}</span><strong>{{ value }}%</strong></div><div class="quality-track"><span style="width:{{ value }}%"></span></div></div>{% endfor %}</div></div>
-  <div class="quality-recommendations"><strong>Suggested next steps</strong><ul>{% for recommendation in quality.recommendations %}<li>{{ recommendation }}</li>{% endfor %}</ul></div>
+  <div class="prototype-feature-head"><div><div class="prototype-kicker">BUSINESS DATA HEALTH CHECK</div><h2 id="quality-heading">Data Health Score</h2><p>Evaluates how clean, complete, and connected your business files are before creating your central database.</p></div><span class="count-pill">{{ quality.table_count }} files profiled</span></div>
+  <div class="quality-layout"><div class="quality-score-wrap"><div class="quality-ring" style="--quality-angle: {{ quality.score * 3.6 }}deg" role="img" aria-label="Business data health score: {{ quality.score }} out of 100"><div class="quality-ring-inner"><strong>{{ quality.score }}</strong><span>/100</span></div></div><div class="quality-score-label">Health Score</div><div class="quality-status">{{ quality.label }}</div></div>
+    <div class="quality-breakdown">{% for label, value in [('Completeness', quality.completeness), ('Duplicate cleanliness', quality.duplicate_cleanliness), ('Unique identity strength', quality.identifier_readiness), ('Cross-file connection strength', quality.relationship_coverage)] %}<div class="quality-metric"><div class="quality-metric-top"><span>{{ label }}</span><strong>{{ value }}%</strong></div><div class="quality-track"><span style="width:{{ value }}%"></span></div></div>{% endfor %}</div></div>
+  <div class="quality-recommendations"><strong>Actionable recommendations for scaling</strong><ul>{% for recommendation in quality.recommendations %}<li>{{ recommendation }}</li>{% endfor %}</ul></div>
 </section>
 
 <form action="{{ url_for('start_preflight', workspace_id=workspace_id) }}" method="post" id="schema-form">
   <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
   <section class="content-section">
-    <div class="section-heading"><div><div class="section-kicker">SCHEMA PROPOSAL</div><h2>Source files & detected entities</h2><p>Table names are editable. Primary keys are proposed from uniqueness and completeness signals.</p></div><span class="count-pill">{{ analysis.tables|length }} tables</span></div>
+    <div class="section-heading"><div><div class="section-kicker">STRUCTURED BUSINESS ENTITIES</div><h2>Your business files & tables</h2><p>Verify your table names and how each record (customer, order, product) is uniquely identified.</p></div><span class="count-pill">{{ analysis.tables|length }} tables</span></div>
     <div class="table-proposal-grid">
       {% for table in analysis.tables %}
       <article class="table-proposal">
         <div class="table-proposal-top"><div class="table-icon">▦</div><div class="file-meta"><strong>{{ table.filename }}</strong><small>{{ "{:,}".format(table.row_count) }} rows · {{ table.column_count }} columns</small></div><span class="file-ok">✓</span></div>
         <label class="field-label" for="table_{{ table.table_name }}">DATABASE TABLE NAME</label>
         <input class="table-name-input" id="table_{{ table.table_name }}" name="table_{{ table.table_name }}" value="{{ table.table_name }}" pattern="[A-Za-z_][A-Za-z0-9_]*" maxlength="55" required>
-        <label class="field-label field-label-spaced" for="primary_key_{{ table.table_name }}">ROW IDENTIFIER / PRIMARY KEY</label>
+        <label class="field-label field-label-spaced" for="primary_key_{{ table.table_name }}">UNIQUE RECORD IDENTIFIER</label>
         <select class="table-name-input key-select" id="primary_key_{{ table.table_name }}" name="primary_key_{{ table.table_name }}">
-          <option value="__generated__" {% if not table.primary_key %}selected{% endif %}>Generate a new row ID (safest if unsure)</option>
+          <option value="__generated__" {% if not table.primary_key %}selected{% endif %}>Automatically assign unique system IDs (safest)</option>
           {% for col in table.columns if col.unique_ratio >= 0.98 and col.filled_ratio >= 0.98 %}
-          <option value="{{ col.name }}" {% if table.primary_key == col.name %}selected{% endif %}>{{ col.original_name }} · {{ (col.unique_ratio * 100)|round|int }}% unique</option>
+          <option value="{{ col.name }}" {% if table.primary_key == col.name %}selected{% endif %}>Use {{ col.original_name }} ({{ (col.unique_ratio * 100)|round|int }}% unique)</option>
           {% endfor %}
         </select>
         <div class="column-list">

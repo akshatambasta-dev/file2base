@@ -3,6 +3,85 @@
 {% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/prototype-features.css') }}">{% endblock %}
 {% block content %}
 <div class="success-banner"><div class="success-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></div><div><div class="section-kicker">MIGRATION COMPLETE</div><h1>Your database is ready.</h1><p>File2Base created a real SQLite database and migrated the records from your source files.</p></div><a class="button button-secondary download-button" href="{{ url_for('download_db', workspace_id=workspace_id) }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 17v4h14v-4"/></svg> Download .sqlite</a></div>
+
+{% if insights %}
+<section class="insights-section" aria-labelledby="insights-heading">
+  <div class="insights-head">
+    <div>
+      <div class="section-kicker">AUTOMATIC BUSINESS INTELLIGENCE</div>
+      <h2 id="insights-heading">{{ insights.summary_heading }}</h2>
+      <p>{{ insights.summary_text }}</p>
+    </div>
+    <span class="count-pill">Live Workspace Overview</span>
+  </div>
+
+  {% if insights.kpis %}
+  <div class="insights-kpi-grid">
+    {% for kpi in insights.kpis %}
+    <div class="insights-kpi-card">
+      <span class="badge badge-{{ kpi.badge_type }}">{{ kpi.badge }}</span>
+      <span class="insights-kpi-label">{{ kpi.label }}</span>
+      <strong class="insights-kpi-value">{{ kpi.value }}</strong>
+      <small class="insights-kpi-sub">{{ kpi.subtext }}</small>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if insights.charts %}
+  <div class="insights-charts-grid">
+    {% for chart in insights.charts %}
+    <div class="insights-chart-card">
+      <h3>{{ chart.title }}</h3>
+      <div class="insights-bars">
+        {% for item in chart.rows %}
+        <div class="insights-bar-row">
+          <span class="insights-bar-label" title="{{ item.label }}">{{ item.label }}</span>
+          <div class="insights-bar-track">
+            <div class="insights-bar-fill" style="width: {{ item.bar_pct }}%"></div>
+          </div>
+          <span class="insights-bar-value">{{ item.count }} <small>({{ item.pct }}%)</small></span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if insights.disconnects %}
+  <div class="insights-disconnects">
+    <div class="insights-disconnects-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>Actionable Reconciliations Found Across Files</span>
+    </div>
+    {% for item in insights.disconnects %}
+    <div class="insights-disconnect-item">
+      <strong>{{ item.title }}</strong>
+      <p>{{ item.detail }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="section-kicker" style="margin-top:24px">WHAT CAN YOU DO NEXT?</div>
+  <div class="next-steps-grid">
+    <div class="next-step-box">
+      <h4>Connect to BI & No-Code Tools</h4>
+      <p>Your <code>.sqlite</code> file can be opened directly with tools like <strong>Metabase, DB Browser, Retool, or PowerBI</strong> for custom dashboards without writing code.</p>
+    </div>
+    <div class="next-step-box">
+      <h4>Automate Without VLOOKUPs</h4>
+      <p>All entity IDs are now validated and linked. Query customer histories or product stock with single relational queries instead of managing multi-tab Excel files.</p>
+    </div>
+    <div class="next-step-box">
+      <h4>Single Source of Truth</h4>
+      <p>Keep your source files safe while updating this database as your central backend for order processing and inventory replenishment.</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <section class="metric-grid database-metrics"><div class="metric-card"><span class="metric-label">TABLES CREATED</span><strong>{{ result.table_count }}</strong><small>Separate business entities</small></div><div class="metric-card"><span class="metric-label">RECORDS MIGRATED</span><strong>{{ "{:,}".format(result.row_count) }}</strong><small>Loaded from source files</small></div><div class="metric-card"><span class="metric-label">RELATIONSHIPS APPROVED</span><strong>{{ result.relationships|length }}</strong><small>{{ result.relationships|selectattr('enforced')|list|length }} enforced as foreign keys</small></div><div class="metric-card"><span class="metric-label">FOREIGN KEY CHECK</span><strong class="{% if result.foreign_key_violations == 0 %}good-number{% else %}warning-number{% endif %}">{{ result.foreign_key_violations }}</strong><small>Reported violations</small></div></section>
 
 {% if quality %}<section class="prototype-feature" aria-labelledby="final-quality-heading" id="final-quality-summary">
