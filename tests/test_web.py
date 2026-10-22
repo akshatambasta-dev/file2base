@@ -116,6 +116,23 @@ class File2BaseWebTests(unittest.TestCase):
         self.assertEqual(report.get_json()["status"], "success")
         report.close()
 
+        # Check export endpoints
+        excel_res = self.client.get(f"/export/{workspace_id}/excel")
+        self.assertEqual(excel_res.status_code, 200)
+        self.assertIn("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excel_res.content_type)
+        self.assertGreater(len(excel_res.data), 1000)
+        excel_res.close()
+
+        csv_res = self.client.get(f"/export/{workspace_id}/csv")
+        self.assertEqual(csv_res.status_code, 200)
+        self.assertIn("application/zip", csv_res.content_type)
+        self.assertGreater(len(csv_res.data), 500)
+        csv_res.close()
+
+        # Check export links exist in HTML
+        self.assertIn(f"/export/{workspace_id}/excel", database_html)
+        self.assertIn(f"/export/{workspace_id}/csv", database_html)
+
 
 if __name__ == "__main__":
     unittest.main()

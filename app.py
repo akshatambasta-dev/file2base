@@ -20,6 +20,7 @@ from werkzeug.utils import secure_filename
 
 from engine.analyzer import analyze_paths
 from engine.database_builder import browse_table, create_database, inspect_database
+from engine.export import export_csv_zip, export_unified_excel
 from engine.insights import generate_business_insights
 from engine.preflight import build_migration_preflight
 from engine.quality import build_quality_summary
@@ -525,6 +526,36 @@ def download_db(workspace_id):
     if not db_path.exists():
         abort(404)
     return send_file(db_path, as_attachment=True, download_name="file2base_generated.sqlite", mimetype="application/x-sqlite3")
+
+
+@app.route("/export/<workspace_id>/excel", methods=["GET"])
+def export_excel(workspace_id):
+    wpath = workspace_path(workspace_id)
+    db_path = wpath / "generated.sqlite"
+    if not db_path.exists():
+        abort(404)
+    buf = export_unified_excel(str(db_path))
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name="file2base_master.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@app.route("/export/<workspace_id>/csv", methods=["GET"])
+def export_csv(workspace_id):
+    wpath = workspace_path(workspace_id)
+    db_path = wpath / "generated.sqlite"
+    if not db_path.exists():
+        abort(404)
+    buf = export_csv_zip(str(db_path))
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name="file2base_csv_master.zip",
+        mimetype="application/zip",
+    )
 
 
 @app.route("/report/<workspace_id>", methods=["GET"])

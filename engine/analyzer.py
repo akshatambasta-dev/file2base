@@ -79,7 +79,8 @@ def _unique_headers(values: list[Any]) -> list[str]:
 
 def _clean_value(value: Any) -> Any:
     if isinstance(value, str):
-        return value if value.strip() else None
+        cleaned = re.sub(r"\s+", " ", value).strip()
+        return cleaned if cleaned else None
     return value
 
 
@@ -97,8 +98,20 @@ def clean_numeric_string(value: Any) -> str:
     return text.strip()
 
 
-def read_business_file(path: str) -> DataTable:
-    """Read CSV or the first worksheet of an XLSX file using pure-Python tooling."""
+def inspect_file_sheets(path: str) -> list[str]:
+    """Return worksheet names for an XLSX workbook, or an empty list for CSV."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".xlsx":
+        workbook = load_workbook(path, read_only=True, data_only=True)
+        try:
+            return list(workbook.sheetnames)
+        finally:
+            workbook.close()
+    return []
+
+
+def read_business_file(path: str, sheet_name: str | None = None) -> DataTable:
+    """Read CSV or a specific worksheet of an XLSX file using pure-Python tooling."""
     ext = os.path.splitext(path)[1].lower()
     raw_rows: list[list[Any]] = []
     if ext == ".csv":
@@ -120,7 +133,10 @@ def read_business_file(path: str) -> DataTable:
     elif ext == ".xlsx":
         workbook = load_workbook(path, read_only=True, data_only=True)
         try:
-            sheet = workbook.active
+            if sheet_name and sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+            else:
+                sheet = workbook.active
             raw_rows = [list(row) for row in sheet.iter_rows(values_only=True)]
         finally:
             workbook.close()
@@ -223,8 +239,95 @@ def _is_identifierish(name: str) -> bool:
     return bool(tokens & ID_WORDS) or slugify(name).endswith("_id") or slugify(name).endswith("_key")
 
 
-def profile_file(file_id: str, original_filename: str, path: str, table: DataTable, used_table_names: set[str]) -> dict[str, Any]:
-    base = slugify(os.path.splitext(original_filename)[0], "business_data")
+def detect_fuzzy_duplicates(table: DataTable, max_candidates: int = 6) -> list[dict[str, Any]]:
+    """Surface candidate fuzzy duplicate text values in primary entity columns."""
+    target_tokens = {"name", "customer", "client", "company", "vendor", "supplier", "title", "address", "city", "organization", "description"}
+    candidate_cols = []
+    for col in table.columns:
+        slug = slugify(col)
+        tokens = set(slug.split("_"))
+        if tokens & target_tokens:
+            candidate_cols.append(col)
+
+    if not candidate_cols:
+        for col in table.columns:
+            nonempty = _nonempty(table[col])
+            if nonempty and all(isinstance(v, str) for v in nonempty[:20]):
+                avg_len = sum(len(str(v)) for v in nonempty[:20]) / max(1, min(len(nonempty), 20))
+                if avg_len >= 5 and len(set(nonempty)) >= 3:
+                    candidate_cols.append(col)
+                    break
+
+    results = []
+    for col in candidate_cols[:3]:
+        raw_vals = [str(v).strip() for v in _nonempty(table[col])]
+        distinct_vals = sorted(list({v for v in raw_vals if len(v) >= 3}))
+        if len(distinct_vals) < 2:
+            continue
+        sample_vals = distinct_vals[:300]
+        col_candidates = []
+
+        for i in range(len(sample_vals)):
+            v1 = sample_vals[i]
+            v1_clean = re.sub(r"[^\w\s]", "", v1.lower()).strip()
+            for j in range(i + 1, min(i + 40, len(sample_vals))):
+                v2 = sample_vals[j]
+                if v1.lower() == v2.lower():
+                    col_candidates.append({
+                        "column": col,
+                        "value_a": v1,
+                        "value_b": v2,
+                        "similarity_pct": 100,
+                        "reason": "Case variance only",
+                    })
+                else:
+                    v2_clean = re.sub(r"[^\w\s]", "", v2.lower()).strip()
+                    if v1_clean == v2_clean and v1_clean:
+                        col_candidates.append({
+                            "column": col,
+                            "value_a": v1,
+                            "value_b": v2,
+                            "similarity_pct": 98,
+                            "reason": "Punctuation or spacing variance",
+                        })
+                    elif abs(len(v1) - len(v2)) <= 4:
+                        ratio = difflib.SequenceMatcher(None, v1.lower(), v2.lower()).ratio()
+                        if ratio >= 0.88:
+                            col_candidates.append({
+                                "column": col,
+                                "value_a": v1,
+                                "value_b": v2,
+                                "similarity_pct": round(ratio * 100),
+                                "reason": "Slight spelling or character variance",
+                            })
+
+                if len(col_candidates) >= max_candidates:
+                    break
+            if len(col_candidates) >= max_candidates:
+                break
+        results.extend(col_candidates)
+
+    return results
+
+
+def profile_file(
+    file_id: str,
+    original_filename: str,
+    path: str,
+    table: DataTable,
+    used_table_names: set[str],
+    sheet_name: str | None = None,
+) -> dict[str, Any]:
+    if sheet_name:
+        sheet_slug = slugify(sheet_name)
+        if sheet_slug not in {"sheet", "sheet1", "sheet2", "sheet3", "data", "table"}:
+            base = sheet_slug
+        else:
+            file_base = slugify(os.path.splitext(original_filename.split(" [")[0])[0], "business_data")
+            base = f"{file_base}_{sheet_slug}"
+    else:
+        base = slugify(os.path.splitext(original_filename)[0], "business_data")
+
     table_name = base
     suffix = 2
     while table_name in used_table_names:
@@ -276,14 +379,17 @@ def profile_file(file_id: str, original_filename: str, path: str, table: DataTab
 
     row_signatures = [tuple(_text(row.get(column)).casefold() for column in original_cols) for row in table.rows]
     duplicate_rows = len(row_signatures) - len(set(row_signatures))
+    fuzzy_duplicates = detect_fuzzy_duplicates(table)
     return {
         "id": file_id,
         "filename": original_filename,
         "path": path,
+        "sheet_name": sheet_name,
         "table_name": table_name,
         "row_count": len(table),
         "column_count": len(table.columns),
         "duplicate_rows": duplicate_rows,
+        "fuzzy_duplicates": fuzzy_duplicates,
         "columns": col_profiles,
         "primary_key": primary_key,
     }
@@ -325,11 +431,37 @@ def analyze_paths(files: list[dict[str, str]]) -> dict[str, Any]:
     used_table_names: set[str] = set()
     profiles = []
     for item in files:
-        table = read_business_file(item["path"])
-        if len(table) > 100_000:
-            raise ValueError(f"{item['filename']} has more than 100,000 rows; the demo limit is 100,000 rows per file.")
-        tables_by_id[item["id"]] = table
-        profiles.append(profile_file(item["id"], item["filename"], item["path"], table, used_table_names))
+        sheets = inspect_file_sheets(item["path"])
+        if len(sheets) > 1:
+            # Multi-sheet Excel workbook: extract each non-empty sheet as a distinct table
+            sheet_tables: list[tuple[str, DataTable]] = []
+            for s in sheets:
+                try:
+                    dt = read_business_file(item["path"], sheet_name=s)
+                    if not dt.empty:
+                        sheet_tables.append((s, dt))
+                except ValueError:
+                    continue
+            if not sheet_tables:
+                raise ValueError(f"{item['filename']} does not contain any worksheets with valid data.")
+            for s_name, table in sheet_tables:
+                if len(table) > 100_000:
+                    raise ValueError(f"{item['filename']} [{s_name}] has more than 100,000 rows; the demo limit is 100,000 rows per table.")
+                sub_id = f"{item['id']}__{slugify(s_name)}"
+                sub_suffix = 2
+                while sub_id in tables_by_id:
+                    sub_id = f"{item['id']}__{slugify(s_name)}_{sub_suffix}"
+                    sub_suffix += 1
+                tables_by_id[sub_id] = table
+                display_name = f"{item['filename']} [{s_name}]"
+                profiles.append(profile_file(sub_id, display_name, item["path"], table, used_table_names, sheet_name=s_name))
+        else:
+            sheet_name = sheets[0] if sheets else None
+            table = read_business_file(item["path"], sheet_name=sheet_name)
+            if len(table) > 100_000:
+                raise ValueError(f"{item['filename']} has more than 100,000 rows; the demo limit is 100,000 rows per file.")
+            tables_by_id[item["id"]] = table
+            profiles.append(profile_file(item["id"], item["filename"], item["path"], table, used_table_names, sheet_name=sheet_name))
 
     relationships = []
     for source in profiles:
@@ -386,11 +518,13 @@ def analyze_paths(files: list[dict[str, str]]) -> dict[str, Any]:
         "tables": profiles,
         "relationships": selected_best,
         "summary": {
-            "file_count": len(profiles),
+            "file_count": len(files),
+            "table_count": len(profiles),
             "row_count": sum(p["row_count"] for p in profiles),
             "column_count": sum(p["column_count"] for p in profiles),
             "relationship_count": len(selected_best),
             "duplicate_rows": sum(p["duplicate_rows"] for p in profiles),
+            "fuzzy_duplicates": sum(len(p.get("fuzzy_duplicates", [])) for p in profiles),
         },
     }
 

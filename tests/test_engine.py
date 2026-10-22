@@ -204,6 +204,126 @@ class File2BaseEngineTests(unittest.TestCase):
             self.assertIn("REGISTERED CUSTOMERS", labels)
             self.assertGreater(len(insights["charts"]), 0)
 
+    def test_multi_sheet_excel_splitting_and_migration(self):
+        from openpyxl import Workbook
+        from engine.analyzer import inspect_file_sheets, read_business_file
+        with tempfile.TemporaryDirectory(prefix="file2base-multisheet-") as temp:
+            workspace = Path(temp)
+            upload_dir = workspace / "uploads"
+            upload_dir.mkdir()
+            xlsx_path = upload_dir / "company_data.xlsx"
+
+            # Create a multi-sheet workbook
+            wb = Workbook()
+            ws_customers = wb.active
+            ws_customers.title = "Customers"
+            ws_customers.append(["customer_id", "customer_name", "email"])
+            ws_customers.append(["CUST01", "Acme Corporation", "contact@acme.com"])
+            ws_customers.append(["CUST02", "Globex Inc", "info@globex.com"])
+            ws_customers.append(["CUST03", "Stark Industries", "tony@stark.com"])
+
+            ws_orders = wb.create_sheet(title="Orders")
+            ws_orders.append(["order_id", "customer_id", "amount"])
+            ws_orders.append(["ORD101", "CUST01", "$150.00"])
+            ws_orders.append(["ORD102", "CUST02", "₹2,400"])
+            ws_orders.append(["ORD103", "CUST01", "€89.50"])
+
+            # Also add an empty sheet to test graceful skipping
+            wb.create_sheet(title="EmptySheet")
+            wb.save(xlsx_path)
+
+            sheets = inspect_file_sheets(str(xlsx_path))
+            self.assertEqual(sheets, ["Customers", "Orders", "EmptySheet"])
+
+            dt_cust = read_business_file(str(xlsx_path), sheet_name="Customers")
+            self.assertEqual(len(dt_cust), 3)
+            self.assertEqual(dt_cust.columns, ["customer_id", "customer_name", "email"])
+
+            files = [{"id": "multi1", "filename": "company_data.xlsx", "path": str(xlsx_path)}]
+            analysis = analyze_paths(files)
+
+            # Check that two distinct non-empty tables were created
+            self.assertEqual(len(analysis["tables"]), 2)
+            table_names = {t["table_name"] for t in analysis["tables"]}
+            self.assertIn("customers", table_names)
+            self.assertIn("orders", table_names)
+
+            # Check cross-sheet relationship was detected
+            links = {(r["source_table"], r["source_column"], r["target_table"], r["target_column"]) for r in analysis["relationships"]}
+            self.assertIn(("orders", "customer_id", "customers", "customer_id"), links)
+
+            # Migrate to database
+            all_ids = [r["suggestion_id"] for r in analysis["relationships"]]
+            result = create_database(str(workspace), analysis, all_ids)
+            self.assertEqual(result["table_count"], 2)
+            self.assertEqual(result["row_count"], 6)
+
+            info = inspect_database(result["db_path"])
+            self.assertEqual(len(info["tables"]), 2)
+            orders_browse = browse_table(result["db_path"], "orders")
+            self.assertEqual(orders_browse["total"], 3)
+
+    def test_whitespace_normalization_and_fuzzy_duplicates(self):
+        from engine.analyzer import DataTable, detect_fuzzy_duplicates, _clean_value
+
+        # 1. Whitespace collapsing test
+        self.assertEqual(_clean_value("   Acme    Corporation   "), "Acme Corporation")
+        self.assertEqual(_clean_value("John \t\t  Doe\n"), "John Doe")
+        self.assertIsNone(_clean_value("    "))
+
+        # 2. Fuzzy duplicate detection
+        test_table = DataTable(
+            columns=["customer_id", "company_name", "contact"],
+            rows=[
+                {"customer_id": "1", "company_name": "Acme Corp", "contact": "Alice"},
+                {"customer_id": "2", "company_name": "Acme Corp.", "contact": "Bob"},
+                {"customer_id": "3", "company_name": "Acme Corporation", "contact": "Charlie"},
+                {"customer_id": "4", "company_name": "Globex Logistics", "contact": "Dave"},
+                {"customer_id": "5", "company_name": "Globex Logistix", "contact": "Eve"},
+                {"customer_id": "6", "company_name": "Initech Systems", "contact": "Frank"},
+            ]
+        )
+        dupes = detect_fuzzy_duplicates(test_table)
+        self.assertGreaterEqual(len(dupes), 2)
+        pairs = {(d["value_a"], d["value_b"]) for d in dupes}
+        self.assertTrue(any("Acme Corp" in p[0] and "Acme Corp" in p[1] for p in pairs))
+
+    def test_master_exports_excel_and_csv_zip(self):
+        from openpyxl import load_workbook
+        import zipfile
+        from engine.export import export_csv_zip, export_unified_excel
+        with tempfile.TemporaryDirectory(prefix="file2base-export-") as temp:
+            workspace = Path(temp)
+            upload_dir = workspace / "uploads"
+            upload_dir.mkdir()
+            files = []
+            for index, source in enumerate(sorted((ROOT / "sample_data").iterdir())):
+                target = upload_dir / source.name
+                shutil.copy2(source, target)
+                files.append({"id": f"exp{index}", "filename": source.name, "path": str(target)})
+            analysis = analyze_paths(files)
+            ids = [rel["suggestion_id"] for rel in analysis["relationships"]]
+            result = create_database(str(workspace), analysis, ids)
+
+            # Test Master Excel export
+            excel_buf = export_unified_excel(result["db_path"])
+            self.assertGreater(len(excel_buf.getvalue()), 1000)
+            wb = load_workbook(excel_buf)
+            self.assertEqual(len(wb.sheetnames), 6)
+            self.assertIn("customers", wb.sheetnames)
+            ws = wb["customers"]
+            self.assertIn("customer_id", [cell.value for cell in ws[1]])
+
+            # Test CSV ZIP export
+            zip_buf = export_csv_zip(result["db_path"])
+            self.assertGreater(len(zip_buf.getvalue()), 500)
+            with zipfile.ZipFile(zip_buf, "r") as zf:
+                names = zf.namelist()
+                self.assertEqual(len(names), 6)
+                self.assertIn("customers.csv", names)
+                customers_csv = zf.read("customers.csv").decode("utf-8-sig")
+                self.assertIn("customer_id", customers_csv)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -40,6 +40,9 @@ def build_quality_summary(analysis: dict) -> dict:
         recommendations.append("Review missing values before relying on reports or joins.")
     if duplicate_rows:
         recommendations.append(f"Inspect {duplicate_rows:,} exact duplicate row(s); they are preserved unless you choose otherwise.")
+    fuzzy_candidates = sum(len(table.get("fuzzy_duplicates", [])) for table in tables)
+    if fuzzy_candidates:
+        recommendations.append(f"Inspect {fuzzy_candidates} potential fuzzy duplicate candidate(s) in entity fields (slight spelling/spacing variances).")
     if any(not table.get("primary_key") for table in tables):
         recommendations.append("At least one table needs a generated row ID or a manually selected identifier.")
     if relationships and any(float(rel.get("coverage", 0) or 0) < 0.98 for rel in relationships):
@@ -54,6 +57,7 @@ def build_quality_summary(analysis: dict) -> dict:
         "identifier_readiness": round(identifier_readiness),
         "relationship_coverage": round(relationship_coverage),
         "duplicate_rows": duplicate_rows,
+        "fuzzy_duplicates": fuzzy_candidates,
         "total_rows": total_rows,
         "table_count": len(tables),
         "recommendations": recommendations,

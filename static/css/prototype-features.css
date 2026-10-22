@@ -140,4 +140,32 @@
 .biz-highlight-box h4{margin:0 0 6px;font-size:.94rem;color:#172b58}
 .biz-highlight-box p{margin:0;font-size:.82rem;color:#5c6d86;line-height:1.5}
 
-@media(max-width:750px){.view-mode-bar{flex-direction:column;align-items:stretch}.view-mode-switcher{width:100%}.view-mode-btn{flex:1;justify-content:center}}
+.banner-download-cluster{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.banner-download-cluster .download-button{display:inline-flex;align-items:center;gap:8px}
+.banner-download-cluster .download-button svg{width:16px;height:16px}
+
+/* 1-Click Clean Data Exports */
+.biz-export-section{margin:28px 0;padding:24px 28px;background:#f5f8fd;border:1px solid #d8e4f5;border-radius:14px}
+.biz-export-header{margin-bottom:20px}
+.biz-export-header h3{margin:4px 0 6px;color:#172b58;font-size:1.25rem;font-weight:700}
+.biz-export-header p{margin:0;color:#5a6e8e;font-size:.88rem;line-height:1.5}
+.biz-export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+.biz-export-card{background:#fff;border:1px solid #dce4f0;border-radius:12px;padding:20px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 10px rgba(23,43,88,.03);transition:transform .15s ease,box-shadow .15s ease}
+.biz-export-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(23,43,88,.07)}
+.biz-export-icon{font-size:1.8rem;margin-bottom:12px}
+.biz-export-body strong{display:block;color:#172b58;font-size:.98rem;margin-bottom:6px}
+.biz-export-body p{margin:0 0 16px;color:#61728d;font-size:.82rem;line-height:1.5}
+.biz-export-card .button{align-self:flex-start;width:100%;text-align:center;justify-content:center}
+
+/* Fuzzy duplicates indicator */
+.fuzzy-dupe-panel{margin:20px 0;padding:20px;border:1px solid #fed7aa;border-radius:12px;background:#fffaf0}
+.fuzzy-dupe-head{display:flex;align-items:center;gap:10px;color:#9a3412;font-size:.95rem;font-weight:700;margin-bottom:8px}
+.fuzzy-dupe-head svg{width:20px;height:20px;flex-shrink:0}
+.fuzzy-dupe-panel p{margin:0 0 14px;color:#7c2d12;font-size:.84rem;line-height:1.5}
+.fuzzy-dupe-list{display:flex;flex-direction:column;gap:8px}
+.fuzzy-dupe-item{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #ffedd5;padding:10px 14px;border-radius:8px;font-size:.83rem}
+.fuzzy-dupe-item .dupe-pair{color:#172b58}
+.fuzzy-dupe-item .dupe-pair strong{color:#9a3412}
+.fuzzy-dupe-item .dupe-match{font:600 .75rem "IBM Plex Mono",monospace;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px}
+
+@media(max-width:750px){.view-mode-bar{flex-direction:column;align-items:stretch}.view-mode-switcher{width:100%}.view-mode-btn{flex:1;justify-content:center}.banner-download-cluster{width:100%}.banner-download-cluster .download-button{flex:1;justify-content:center}}

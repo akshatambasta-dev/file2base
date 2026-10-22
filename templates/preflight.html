@@ -40,6 +40,26 @@
   {% if preflight.relationships %}<div class="simple-table-wrap"><table class="simple-table"><thead><tr><th>Source</th><th>Target</th><th>Coverage</th><th>Unmatched rows</th><th>Action</th></tr></thead><tbody>{% for rel in preflight.relationships %}<tr><td><strong>{{ rel.source_table }}.{{ rel.source_column }}</strong></td><td>{{ rel.target_table }}.{{ rel.target_column }}</td><td>{{ rel.coverage_pct }}%</td><td>{{ rel.orphan_rows }}</td><td>{% if rel.will_enforce %}<span class="status-pill status-pill-green">Foreign key</span>{% else %}<span class="status-pill status-pill-amber">Recommendation only</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state compact-empty"><p>No relationships were selected. The tables will be created independently.</p></div>{% endif %}
 </section>
 
+{% if preflight.fuzzy_duplicate_count %}
+<section class="fuzzy-dupe-panel" aria-labelledby="fuzzy-dupe-heading">
+  <div class="fuzzy-dupe-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    <span id="fuzzy-dupe-heading">Entity Duplicate Normalization Candidates ({{ preflight.fuzzy_duplicate_count }})</span>
+  </div>
+  <p>Potential duplicate entity records were surfaced due to slight spelling, punctuation, or capitalization variances. <strong>Non-destructive guarantee:</strong> File2Base keeps all records intact so you never lose data.</p>
+  <div class="fuzzy-dupe-list">
+    {% for table in preflight.tables if table.fuzzy_duplicates %}
+      {% for dupe in table.fuzzy_duplicates %}
+      <div class="fuzzy-dupe-item">
+        <span class="dupe-pair"><strong>{{ table.table_name }}.{{ dupe.column }}:</strong> "{{ dupe.value_a }}" ↔ "{{ dupe.value_b }}" ({{ dupe.reason }})</span>
+        <span class="dupe-match">{{ dupe.similarity_pct }}% match</span>
+      </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 {% if preflight.warnings %}
 <section class="content-section"><div class="section-heading"><div><div class="section-kicker">REVIEW NOTES</div><h2>Warnings to understand</h2><p>File2Base does not silently delete duplicate rows or guess at missing relationships.</p></div></div><div class="issue-list">{% for item in preflight.warnings %}<article class="issue-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p></article>{% endfor %}</div></section>
 {% endif %}

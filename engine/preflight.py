@@ -44,7 +44,7 @@ def build_migration_preflight(
     tables = analysis.get("tables", [])
     by_id = {table["id"]: table for table in tables}
     by_name = {table["table_name"]: table for table in tables}
-    data_by_id = {table["id"]: read_business_file(table["path"]) for table in tables}
+    data_by_id = {table["id"]: read_business_file(table["path"], table.get("sheet_name")) for table in tables}
     final_names = _db_table_names(tables, overrides)
 
     blockers: list[dict[str, str]] = []
@@ -111,6 +111,14 @@ def build_migration_preflight(
                 "detail": f"{table['duplicate_rows']} exact duplicate row(s) were detected. They will not be silently deleted; decide later whether they are legitimate repeats.",
             })
 
+        fuzzy_list = table.get("fuzzy_duplicates", [])
+        if fuzzy_list:
+            sample = fuzzy_list[0]
+            warnings.append({
+                "title": f"{table['filename']}: fuzzy duplicate candidate(s) in {sample['column']}",
+                "detail": f"{len(fuzzy_list)} potential duplicate pair(s) detected (e.g. '{sample['value_a']}' vs '{sample['value_b']}'). Records are preserved non-destructively; review these candidates for consistency.",
+            })
+
         table_checks.append({
             "source_name": table["filename"],
             "table_name": final_names[table["table_name"]],
@@ -122,6 +130,7 @@ def build_migration_preflight(
             "duplicate_primary_key_values": duplicate_pk,
             "generated_key": not bool(pk_profile),
             "duplicate_rows": int(table.get("duplicate_rows", 0)),
+            "fuzzy_duplicates": fuzzy_list,
             "type_warning_count": type_warning_count,
         })
 
@@ -184,6 +193,7 @@ def build_migration_preflight(
         "warning_count": len(warnings),
         "blocker_count": len(blockers),
         "conversion_warning_count": conversion_warnings,
+        "fuzzy_duplicate_count": sum(len(t.get("fuzzy_duplicates", [])) for t in table_checks),
         "tables": table_checks,
         "relationships": relationship_checks,
         "blockers": blockers,

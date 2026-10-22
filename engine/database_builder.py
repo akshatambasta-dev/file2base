@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 from typing import Any
 
@@ -17,8 +18,13 @@ def _quote(identifier: str) -> str:
 def _convert_value(value: Any, sql_type: str):
     if value is None or (isinstance(value, float) and value != value):
         return None
-    if isinstance(value, str) and not value.strip():
-        return None
+    if isinstance(value, str):
+        cleaned_str = re.sub(r"\s+", " ", value).strip()
+        if not cleaned_str:
+            return None
+    else:
+        cleaned_str = None
+
     if sql_type == "INTEGER":
         try:
             cleaned = clean_numeric_string(value)
@@ -30,19 +36,19 @@ def _convert_value(value: Any, sql_type: str):
             # when the declared column affinity is INTEGER; preflight also warns.
             return cleaned
         except (ValueError, TypeError):
-            return str(value).strip()
+            return cleaned_str if cleaned_str is not None else str(value).strip()
     if sql_type == "REAL":
         try:
             cleaned = clean_numeric_string(value)
             return float(cleaned)
         except (ValueError, TypeError):
-            return str(value).strip()
+            return cleaned_str if cleaned_str is not None else str(value).strip()
     if hasattr(value, "isoformat"):
         try:
             return value.isoformat(sep=" ") if hasattr(value, "hour") else value.isoformat()
         except TypeError:
             return value.isoformat()
-    return str(value).strip()
+    return cleaned_str if cleaned_str is not None else str(value).strip()
 
 
 def _unique_db_columns(table: dict[str, Any]) -> list[dict[str, Any]]:
@@ -116,7 +122,7 @@ def create_database(
     table_objects = []
     source_frames = {}
     for table in tables:
-        df = read_business_file(table["path"])
+        df = read_business_file(table["path"], table.get("sheet_name"))
         source_frames[table["id"]] = df
         effective_table = {**table, "primary_key": selected_primary_keys.get(table["table_name"])}
         cols = _unique_db_columns(effective_table)
