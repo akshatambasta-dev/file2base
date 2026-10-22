@@ -105,4 +105,39 @@
 .next-step-box{padding:16px;border:1px solid #dce4f1;border-radius:10px;background:#f8fbfe}
 .next-step-box h4{margin:0 0 6px;color:#172b58;font-size:.92rem}
 .next-step-box p{margin:0;color:#5a6b85;font-size:.8rem;line-height:1.45}
-@media(max-width:700px){.insights-bar-row{grid-template-columns:90px 1fr 50px}.insights-head{flex-direction:column}}
+/* View Mode Switcher */
+.view-mode-bar{margin:22px 0 16px;padding:16px 20px;background:#fff;border:1px solid #dce4f0;border-radius:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;box-shadow:0 2px 12px rgba(23,43,88,.04)}
+.view-mode-info strong{display:block;color:#172b58;font-size:.96rem;font-weight:700}
+.view-mode-info span{display:block;color:#61728d;font-size:.82rem;margin-top:2px}
+.view-mode-switcher{display:inline-flex;background:#edf2f9;padding:4px;border-radius:10px;gap:4px}
+.view-mode-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:0;background:transparent;color:#475b7c;font:600 .84rem "DM Sans",sans-serif;border-radius:8px;cursor:pointer;transition:all .15s ease}
+.view-mode-btn svg{width:16px;height:16px}
+.view-mode-btn:hover{color:#172b58}
+.view-mode-btn.active{background:#fff;color:#172b58;box-shadow:0 2px 8px rgba(23,43,88,.1);font-weight:700}
+.view-mode-btn .badge-pill{font:600 .62rem "IBM Plex Mono",monospace;padding:2px 6px;border-radius:12px;background:#e2ebf8;color:#20407a;text-transform:uppercase}
+.view-mode-btn.active .badge-pill{background:#172b58;color:#fff}
+
+.view-panel{display:none}
+.view-panel.active{display:block;animation:viewFadeIn .2s ease-in-out}
+@keyframes viewFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Business Executive View Enhancements */
+.biz-banner{padding:24px 28px;background:linear-gradient(135deg,#172b58 0%,#264585 100%);color:#fff;border-radius:14px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.biz-banner-content h2{margin:0 0 6px;font-size:1.45rem;color:#fff;font-weight:700}
+.biz-banner-content p{margin:0;color:#c8d7f2;font-size:.9rem;line-height:1.5;max-width:680px}
+.biz-banner-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:8px 14px;border-radius:30px;font-size:.82rem;font-weight:600;color:#fff}
+.biz-banner-badge span{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399}
+
+.biz-health-card{padding:20px 24px;border:1px solid #dce5f2;border-radius:12px;background:#fff;margin-bottom:22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.biz-health-score{display:flex;align-items:baseline;gap:4px;color:#172b58;font-size:2rem;font-weight:800;font-family:"IBM Plex Mono",monospace}
+.biz-health-score small{font-size:.9rem;color:#7888a2;font-weight:600}
+.biz-health-text strong{display:block;font-size:.96rem;color:#172b58;margin-bottom:3px}
+.biz-health-text p{margin:0;font-size:.84rem;color:#5a6b85;line-height:1.45}
+
+.biz-highlights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:24px 0}
+.biz-highlight-box{padding:18px 20px;background:#fbfcfe;border:1px solid #e2e9f3;border-radius:12px}
+.biz-highlight-box .box-icon{font-size:1.2rem;margin-bottom:8px;display:inline-block}
+.biz-highlight-box h4{margin:0 0 6px;font-size:.94rem;color:#172b58}
+.biz-highlight-box p{margin:0;font-size:.82rem;color:#5c6d86;line-height:1.5}
+
+@media(max-width:750px){.view-mode-bar{flex-direction:column;align-items:stretch}.view-mode-switcher{width:100%}.view-mode-btn{flex:1;justify-content:center}}

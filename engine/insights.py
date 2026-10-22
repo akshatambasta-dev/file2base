@@ -174,6 +174,30 @@ def generate_business_insights(db_path: str) -> dict[str, Any]:
                             "badge": "Inventory",
                             "badge_type": "amber" if (min_qty is not None and min_qty < 10) else "green",
                         })
+
+                        # Warehouse / facility breakdown chart
+                        for wh_cand in ("warehouse", "location", "facility", "store", "bin"):
+                            if wh_cand in cols:
+                                wh_col = cols[wh_cand]
+                                wh_data = con.execute(
+                                    f"SELECT {_quote(wh_col)} as label, SUM(CAST({_quote(qty_col)} AS REAL)) as units FROM {_quote(inventory_table)} WHERE {_quote(wh_col)} IS NOT NULL GROUP BY {_quote(wh_col)} ORDER BY units DESC LIMIT 5"
+                                ).fetchall()
+                                if len(wh_data) > 1 and total_units > 0:
+                                    max_u = max(r["units"] for r in wh_data) or 1
+                                    insights["charts"].append({
+                                        "title": f"Stock Distribution by {wh_col.replace('_', ' ').title()}",
+                                        "type": "bars",
+                                        "rows": [
+                                            {
+                                                "label": str(r["label"]).title(),
+                                                "count": int(r["units"]),
+                                                "pct": round((r["units"] / total_units) * 100),
+                                                "bar_pct": round((r["units"] / max_u) * 100),
+                                            }
+                                            for r in wh_data
+                                        ],
+                                    })
+                                break
                 except Exception:
                     pass
 
