@@ -498,8 +498,10 @@ def database(workspace_id):
     except Exception:
         logger.exception("Could not generate business insights")
         insights = None
+    active_view = request.args.get("view", "business")
     return render_template("database.html", workspace_id=workspace_id, info=info, result=result,
-                           audit_events=audit_events, quality=quality, insights=insights)
+                           audit_events=audit_events, quality=quality, insights=insights,
+                           active_view=active_view)
 
 
 @app.route("/database/<workspace_id>/table/<table_name>", methods=["GET"])

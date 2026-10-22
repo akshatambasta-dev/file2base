@@ -21,23 +21,23 @@
     <span>Tailor the interface for business growth or technical database administration.</span>
   </div>
   <div class="view-mode-switcher" role="tablist">
-    <button type="button" class="view-mode-btn active" id="btn-mode-business" role="tab" aria-selected="true" aria-controls="view-business" onclick="switchViewMode('business')">
+    <a href="{{ url_for('database', workspace_id=workspace_id, view='business') }}" class="view-mode-btn {% if active_view != 'manager' %}active{% endif %}" id="btn-mode-business" role="tab" aria-selected="{% if active_view != 'manager' %}true{% else %}false{% endif %}" aria-controls="view-business">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
       <span>Business Overview</span>
       <span class="badge-pill">Executive</span>
-    </button>
-    <button type="button" class="view-mode-btn" id="btn-mode-manager" role="tab" aria-selected="false" aria-controls="view-manager" onclick="switchViewMode('manager')">
+    </a>
+    <a href="{{ url_for('database', workspace_id=workspace_id, view='manager') }}" class="view-mode-btn {% if active_view == 'manager' %}active{% endif %}" id="btn-mode-manager" role="tab" aria-selected="{% if active_view == 'manager' %}true{% else %}false{% endif %}" aria-controls="view-manager">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
       <span>Database Manager</span>
       <span class="badge-pill">Technical</span>
-    </button>
+    </a>
   </div>
 </section>
 
 <!-- ========================================== -->
 <!-- 1. BUSINESS EXECUTIVE VIEW (SIMPLIFIED)    -->
 <!-- ========================================== -->
-<div id="view-business" class="view-panel active" role="tabpanel" aria-labelledby="btn-mode-business">
+<div id="view-business" class="view-panel {% if active_view != 'manager' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-mode-business">
   <div class="biz-banner">
     <div class="biz-banner-content">
       <div class="section-kicker" style="color:#a7c5f8">BUSINESS INTELLIGENCE</div>
@@ -134,14 +134,14 @@
       <h2>Need technical details or direct SQL exports?</h2>
       <p>Switch to the <strong>Database Manager</strong> view anytime to inspect raw database schemas, table schemas, and foreign key validations.</p>
     </div>
-    <button type="button" class="button button-secondary" onclick="switchViewMode('manager')">Open Database Manager →</button>
+    <a href="{{ url_for('database', workspace_id=workspace_id, view='manager') }}" class="button button-secondary" id="to-manager-btn">Open Database Manager →</a>
   </div>
 </div>
 
 <!-- ========================================== -->
 <!-- 2. DATABASE MANAGER VIEW (TECHNICAL)       -->
 <!-- ========================================== -->
-<div id="view-manager" class="view-panel" role="tabpanel" aria-labelledby="btn-mode-manager">
+<div id="view-manager" class="view-panel {% if active_view == 'manager' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-mode-manager">
   <section class="metric-grid database-metrics">
     <div class="metric-card"><span class="metric-label">TABLES CREATED</span><strong>{{ result.table_count }}</strong><small>Separate SQL entities</small></div>
     <div class="metric-card"><span class="metric-label">RECORDS MIGRATED</span><strong>{{ "{:,}".format(result.row_count) }}</strong><small>Loaded from source files</small></div>
@@ -277,40 +277,4 @@
   <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
   <button type="submit" class="subtle-link">Delete this workspace and data</button>
 </form>
-
-<script>
-function switchViewMode(mode) {
-  var bizPanel = document.getElementById('view-business');
-  var mgrPanel = document.getElementById('view-manager');
-  var bizBtn = document.getElementById('btn-mode-business');
-  var mgrBtn = document.getElementById('btn-mode-manager');
-
-  if (mode === 'manager') {
-    bizPanel.classList.remove('active');
-    mgrPanel.classList.add('active');
-    bizBtn.classList.remove('active');
-    mgrBtn.classList.add('active');
-    bizBtn.setAttribute('aria-selected', 'false');
-    mgrBtn.setAttribute('aria-selected', 'true');
-    try { sessionStorage.setItem('file2base_view_mode', 'manager'); } catch(e){}
-  } else {
-    mgrPanel.classList.remove('active');
-    bizPanel.classList.add('active');
-    mgrBtn.classList.remove('active');
-    bizBtn.classList.add('active');
-    mgrBtn.setAttribute('aria-selected', 'false');
-    bizBtn.setAttribute('aria-selected', 'true');
-    try { sessionStorage.setItem('file2base_view_mode', 'business'); } catch(e){}
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  try {
-    var saved = sessionStorage.getItem('file2base_view_mode');
-    if (saved === 'manager') {
-      switchViewMode('manager');
-    }
-  } catch(e){}
-});
-</script>
 {% endblock %}

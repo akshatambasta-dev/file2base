@@ -104,6 +104,13 @@ class File2BaseWebTests(unittest.TestCase):
         self.assertIn("Database Manager", database_html)
         self.assertIn("view-business", database_html)
         self.assertIn("view-manager", database_html)
+
+        # Check server-side view=manager query parameter
+        manager_page = self.client.get(f"/database/{workspace_id}?view=manager")
+        self.assertEqual(manager_page.status_code, 200)
+        mgr_html = manager_page.get_data(as_text=True)
+        self.assertIn('id="view-manager" class="view-panel active"', mgr_html)
+
         report = self.client.get(f"/report/{workspace_id}")
         self.assertEqual(report.status_code, 200)
         self.assertEqual(report.get_json()["status"], "success")

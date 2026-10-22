@@ -160,4 +160,78 @@
     window.addEventListener('resize', drawGraph);
   }
 
+  // Dual-view mode switcher for database completion page
+  window.switchViewMode = function(mode) {
+    const bizPanel = document.getElementById('view-business');
+    const mgrPanel = document.getElementById('view-manager');
+    const bizBtn = document.getElementById('btn-mode-business');
+    const mgrBtn = document.getElementById('btn-mode-manager');
+
+    if (!bizPanel || !mgrPanel) return;
+
+    if (mode === 'manager') {
+      bizPanel.classList.remove('active');
+      bizPanel.style.display = 'none';
+      mgrPanel.classList.add('active');
+      mgrPanel.style.display = 'block';
+
+      if (bizBtn) {
+        bizBtn.classList.remove('active');
+        bizBtn.setAttribute('aria-selected', 'false');
+      }
+      if (mgrBtn) {
+        mgrBtn.classList.add('active');
+        mgrBtn.setAttribute('aria-selected', 'true');
+      }
+      try { sessionStorage.setItem('file2base_view_mode', 'manager'); } catch(e){}
+    } else {
+      mgrPanel.classList.remove('active');
+      mgrPanel.style.display = 'none';
+      bizPanel.classList.add('active');
+      bizPanel.style.display = 'block';
+
+      if (mgrBtn) {
+        mgrBtn.classList.remove('active');
+        mgrBtn.setAttribute('aria-selected', 'false');
+      }
+      if (bizBtn) {
+        bizBtn.classList.add('active');
+        bizBtn.setAttribute('aria-selected', 'true');
+      }
+      try { sessionStorage.setItem('file2base_view_mode', 'business'); } catch(e){}
+    }
+  };
+
+  // Bind click event listeners directly to avoid inline onclick reliance
+  const bizBtn = document.getElementById('btn-mode-business');
+  const mgrBtn = document.getElementById('btn-mode-manager');
+  const toMgrBtn = document.getElementById('to-manager-btn');
+
+  if (bizBtn) {
+    bizBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.switchViewMode('business');
+    });
+  }
+  if (mgrBtn) {
+    mgrBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.switchViewMode('manager');
+    });
+  }
+  if (toMgrBtn) {
+    toMgrBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.switchViewMode('manager');
+    });
+  }
+
+  // Restore saved view mode preference
+  try {
+    const saved = sessionStorage.getItem('file2base_view_mode');
+    if (saved === 'manager') {
+      window.switchViewMode('manager');
+    }
+  } catch(e){}
+
 })();
