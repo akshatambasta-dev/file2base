@@ -110,6 +110,86 @@ def inspect_file_sheets(path: str) -> list[str]:
     return []
 
 
+SUMMARY_WORDS = {
+    "total", "subtotal", "grand total", "sum", "average", "avg", "mean",
+    "balance", "balance due", "tax", "net total", "gross total", "count", "summary",
+}
+
+
+def _is_summary_row(raw: list[Any], total_cols: int) -> bool:
+    """Return True if a row represents an accounting summary or subtotal."""
+    non_empty = [c for c in raw if c is not None and str(c).strip()]
+    if not non_empty:
+        return False
+    first_text = str(non_empty[0]).strip().lower()
+    first_clean = re.sub(r"[:\-_#]+$", "", first_text).strip()
+    # Strip parenthetical qualifiers like "Tax (10%)" -> "tax"
+    keyword = re.sub(r"\s*\([^)]*\)", "", first_clean).strip()
+    if keyword in SUMMARY_WORDS or first_clean in SUMMARY_WORDS:
+        return True
+    if re.search(r"^(grand\s+)?(total|subtotal|sub-total|sum|average|avg|balance|tax|vat|gst|discount|net|gross)\b", keyword):
+        if len(keyword) <= 25 and len(non_empty) <= max(2, total_cols // 2):
+            return True
+    return False
+
+
+def detect_header_row_index(raw_rows: list[list[Any]]) -> int:
+    """Find the index of the true table header row, skipping title banners and metadata."""
+    if not raw_rows or len(raw_rows) <= 2:
+        return 0
+
+    max_scan = min(15, len(raw_rows))
+    max_cells = max(len([c for c in r if c is not None and str(c).strip()]) for r in raw_rows[:max_scan])
+    if max_cells <= 1:
+        return 0
+
+    best_idx = 0
+    best_score = -999.0
+
+    for idx in range(max_scan):
+        row = raw_rows[idx]
+        cells = [c for c in row if c is not None and str(c).strip()]
+        if not cells:
+            continue
+
+        str_cells = []
+        num_cells = 0
+        for c in cells:
+            val_str = str(c).strip()
+            try:
+                clean_num = clean_numeric_string(val_str)
+                float(clean_num)
+                num_cells += 1
+            except ValueError:
+                str_cells.append(val_str)
+
+        text_ratio = len(str_cells) / max(1, len(cells))
+        fill_ratio = len(cells) / max(1, max_cells)
+        unique_ratio = len({s.lower() for s in str_cells}) / max(1, len(str_cells))
+
+        lookahead_bonus = 0.0
+        if idx + 1 < len(raw_rows):
+            next_row = raw_rows[idx + 1]
+            next_cells = [c for c in next_row if c is not None and str(c).strip()]
+            if len(next_cells) >= min(2, max_cells):
+                lookahead_bonus = 0.25
+
+        banner_penalty = 0.6 if len(cells) == 1 and max_cells >= 2 else 0.0
+        num_penalty = 0.5 * (num_cells / max(1, len(cells)))
+
+        first_lower = str(cells[0]).strip().lower()
+        if any(first_lower.startswith(p) for p in ("report", "company:", "title:", "generated:", "date:", "page ", "prepared")):
+            banner_penalty += 0.5
+
+        score = (0.45 * fill_ratio) + (0.35 * text_ratio) + (0.20 * unique_ratio) + lookahead_bonus - banner_penalty - num_penalty
+
+        if score > best_score:
+            best_score = score
+            best_idx = idx
+
+    return best_idx
+
+
 def read_business_file(path: str, sheet_name: str | None = None) -> DataTable:
     """Read CSV or a specific worksheet of an XLSX file using pure-Python tooling."""
     ext = os.path.splitext(path)[1].lower()
@@ -149,9 +229,17 @@ def read_business_file(path: str, sheet_name: str | None = None) -> DataTable:
     if not raw_rows:
         raise ValueError("The file does not contain a header row or data columns.")
 
-    headers = _unique_headers(raw_rows[0])
+    header_idx = detect_header_row_index(raw_rows)
+    headers = _unique_headers(raw_rows[header_idx])
+
+    data_raw_rows = raw_rows[header_idx + 1:]
+    while data_raw_rows and _is_summary_row(data_raw_rows[-1], len(headers)):
+        data_raw_rows.pop()
+
     rows: list[dict[str, Any]] = []
-    for raw in raw_rows[1:]:
+    for raw in data_raw_rows:
+        if _is_summary_row(raw, len(headers)):
+            continue
         values = list(raw[:len(headers)])
         if len(values) < len(headers):
             values.extend([None] * (len(headers) - len(values)))
@@ -159,6 +247,16 @@ def read_business_file(path: str, sheet_name: str | None = None) -> DataTable:
         # Preserve genuinely blank rows only if the row contains at least one value.
         if any(value is not None for value in row.values()):
             rows.append(row)
+
+    if not rows and len(raw_rows) > header_idx + 1:
+        for raw in raw_rows[header_idx + 1:]:
+            values = list(raw[:len(headers)])
+            if len(values) < len(headers):
+                values.extend([None] * (len(headers) - len(values)))
+            row = {header: _clean_value(value) for header, value in zip(headers, values)}
+            if any(value is not None for value in row.values()):
+                rows.append(row)
+
     return DataTable(headers, rows)
 
 
@@ -395,6 +493,34 @@ def profile_file(
     }
 
 
+BUSINESS_SYNONYMS: dict[str, str] = {
+    # Customer / Client synonyms
+    "customer": "customer", "cust": "customer", "client": "customer", "buyer": "customer",
+    "purchaser": "customer", "account": "customer", "consumer": "customer",
+    # Product / SKU synonyms
+    "product": "product", "item": "product", "sku": "product", "article": "product",
+    "part": "product", "goods": "product", "merchandise": "product",
+    # Vendor / Supplier synonyms
+    "supplier": "supplier", "vendor": "supplier", "provider": "supplier", "merchant": "supplier",
+    "seller": "supplier",
+    # Order / Invoice synonyms
+    "order": "order", "invoice": "order", "sale": "order", "purchase": "order",
+    "bill": "order", "transaction": "order", "po": "order",
+    # Employee / Agent synonyms
+    "employee": "employee", "agent": "employee", "rep": "employee", "staff": "employee",
+    "worker": "employee",
+    # Financial amount synonyms
+    "amount": "amount", "total": "amount", "price": "amount", "cost": "amount",
+    "rate": "amount", "fee": "amount",
+    # Code / Key synonyms
+    "id": "id", "key": "id", "code": "id", "number": "id", "no": "id", "num": "id",
+}
+
+
+def _canonical_token(token: str) -> str:
+    return BUSINESS_SYNONYMS.get(token, token)
+
+
 def _name_similarity(source_col: str, target_col: str, target_table: str) -> float:
     s = slugify(source_col)
     t = slugify(target_col)
@@ -405,11 +531,24 @@ def _name_similarity(source_col: str, target_col: str, target_table: str) -> flo
     source_tokens = set(s.split("_"))
     target_tokens = set(t.split("_"))
     table_tokens = set(slugify(target_table).split("_"))
+
     overlap = len(source_tokens & target_tokens) / max(1, len(source_tokens | target_tokens))
+
+    source_canon = {_canonical_token(tok) for tok in source_tokens}
+    target_canon = {_canonical_token(tok) for tok in target_tokens}
+    table_canon = {_canonical_token(tok) for tok in table_tokens}
+
+    canon_overlap = len(source_canon & target_canon) / max(1, len(source_canon | target_canon))
+
+    if table_canon and table_canon <= source_canon and ("id" in source_canon or "key" in source_tokens):
+        canon_overlap = max(canon_overlap, 0.85)
+
     if table_tokens and table_tokens <= source_tokens and ("id" in source_tokens or "key" in source_tokens):
         overlap = max(overlap, 0.8)
+
+    effective_overlap = max(overlap, canon_overlap)
     ratio = difflib.SequenceMatcher(None, s, t).ratio()
-    return max(overlap, ratio * 0.8)
+    return max(effective_overlap, ratio * 0.8)
 
 
 def _value_set(values: list[Any]) -> set[str]:

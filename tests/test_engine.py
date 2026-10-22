@@ -324,6 +324,125 @@ class File2BaseEngineTests(unittest.TestCase):
                 customers_csv = zf.read("customers.csv").decode("utf-8-sig")
                 self.assertIn("customer_id", customers_csv)
 
+    def test_smart_header_sniffer_skips_banners(self):
+        from openpyxl import Workbook
+        from engine.analyzer import read_business_file, detect_header_row_index
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as f:
+            temp_path = f.name
+
+        try:
+            wb = Workbook()
+            ws = wb.active
+            # Row 1: Title banner
+            ws.append(["ACME TRADING CORP - Q4 SALES REPORT", None, None, None])
+            # Row 2: Metadata
+            ws.append(["Generated on 2026-10-22 by Finance Dept", None, None, None])
+            # Row 3: Blank
+            ws.append([None, None, None, None])
+            # Row 4: True header row
+            ws.append(["Invoice No", "Customer Name", "Order Date", "Amount"])
+            # Row 5-7: Records
+            ws.append(["INV001", "Acme Logistics", "2026-10-01", 1250.00])
+            ws.append(["INV002", "Globex", "2026-10-02", 450.50])
+            ws.append(["INV003", "Stark Corp", "2026-10-03", 920.00])
+            wb.save(temp_path)
+
+            dt = read_business_file(temp_path)
+            # Confirms true header row was detected and extracted
+            self.assertEqual(dt.columns, ["Invoice No", "Customer Name", "Order Date", "Amount"])
+            self.assertEqual(len(dt), 3)
+            self.assertEqual(dt.rows[0]["Invoice No"], "INV001")
+            self.assertEqual(dt.rows[1]["Customer Name"], "Globex")
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    def test_subtotal_and_summary_pruner(self):
+        from openpyxl import Workbook
+        from engine.analyzer import read_business_file
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as f:
+            temp_path = f.name
+
+        try:
+            wb = Workbook()
+            ws = wb.active
+            ws.append(["ID", "Company", "Amount"])
+            ws.append(["1", "Total Quality Logistics", 1500.00])  # Valid business entity with 'Total'
+            ws.append(["2", "Wayne Enterprises", 3200.00])
+            ws.append(["Subtotal", None, 4700.00])               # Accounting subtotal
+            ws.append(["Tax (10%)", None, 470.00])               # Accounting tax
+            ws.append(["Grand Total", None, 5170.00])            # Accounting grand total
+            wb.save(temp_path)
+
+            dt = read_business_file(temp_path)
+            # The 3 summary rows should be pruned, and "Total Quality Logistics" must be preserved!
+            self.assertEqual(len(dt), 2)
+            companies = [row["Company"] for row in dt.rows]
+            self.assertIn("Total Quality Logistics", companies)
+            self.assertIn("Wayne Enterprises", companies)
+            self.assertNotIn("Grand Total", companies)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    def test_semantic_synonym_relationship_detection(self):
+        from engine.analyzer import _name_similarity
+        # client_id <-> customer_id (semantic synonym customer <-> client)
+        score1 = _name_similarity("client_id", "customer_id", "customers")
+        self.assertGreaterEqual(score1, 0.85)
+
+        # buyer_name <-> customer_name
+        score2 = _name_similarity("buyer_name", "customer_name", "customers")
+        self.assertGreaterEqual(score2, 0.85)
+
+        # item_sku <-> product_id
+        score3 = _name_similarity("item_sku", "product_id", "products")
+        self.assertGreaterEqual(score3, 0.50)
+
+    def test_end_to_end_messy_spreadsheet_migration(self):
+        from openpyxl import Workbook
+        with tempfile.TemporaryDirectory(prefix="file2base-messy-") as temp:
+            workspace = Path(temp)
+            upload_dir = workspace / "uploads"
+            upload_dir.mkdir()
+            xlsx_path = upload_dir / "messy_invoices.xlsx"
+
+            wb = Workbook()
+            ws = wb.active
+            # Title banner
+            ws.append(["ACME WHOLESALE SUPPLY - INVOICES 2026", None, None, None])
+            ws.append(["Confidential - Internal Use Only", None, None, None])
+            ws.append([None, None, None, None])
+            # True header row
+            ws.append(["Invoice Number", "Client Name", "Item Code", "Total Price"])
+            # Data records
+            ws.append(["INV-101", "Globex Corp", "SKU-99", "$1,450.00"])
+            ws.append(["INV-102", "Initech", "SKU-88", "$890.50"])
+            ws.append(["INV-103", "Stark Industries", "SKU-77", "₹4,200"])
+            # Trailing subtotal rows
+            ws.append(["Subtotal:", None, None, "$6,540.50"])
+            ws.append(["Tax (18%):", None, None, "$1,177.29"])
+            ws.append(["Grand Total:", None, None, "$7,717.79"])
+            wb.save(xlsx_path)
+
+            files = [{"id": "messy1", "filename": "messy_invoices.xlsx", "path": str(xlsx_path)}]
+            analysis = analyze_paths(files)
+
+            self.assertEqual(len(analysis["tables"]), 1)
+            table = analysis["tables"][0]
+            col_names = [c["name"] for c in table["columns"]]
+            self.assertIn("invoice_number", col_names)
+            self.assertIn("client_name", col_names)
+            self.assertIn("item_code", col_names)
+            self.assertIn("total_price", col_names)
+
+            # Record count should be exactly 3 (excluding banner rows and subtotal rows)
+            self.assertEqual(table["row_count"], 3)
+
+            # Migrate to database
+            result = create_database(str(workspace), analysis, [])
+            self.assertEqual(result["row_count"], 3)
+            info = inspect_database(result["db_path"])
+            self.assertEqual(info["row_count"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
