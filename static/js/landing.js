@@ -54,55 +54,47 @@
   const introScreen = document.getElementById('lp-intro-screen');
   const introWordmark = document.querySelector('[data-wordmark="intro"]');
   const heroWordmark = document.querySelector('[data-wordmark="hero"]');
-  buildBlockWordmark(introWordmark, !reduceMotion);
+  buildBlockWordmark(introWordmark, true);
   buildBlockWordmark(heroWordmark, false);
 
   let introExitTimer = null;
   let introGoneTimer = null;
   let introExited = false;
+  const revealHeroMark = () => {
+    if (!heroWordmark) return;
+    buildBlockWordmark(heroWordmark, true);
+    heroWordmark.classList.add('is-ready');
+  };
+
   function exitIntro() {
     if (!introScreen || introExited) return;
     introExited = true;
     window.clearTimeout(introExitTimer);
     introScreen.classList.add('is-exiting');
     window.removeEventListener('keydown', onIntroKey);
+    // Trigger hero block wordmark animation in sync with intro reveal
+    revealHeroMark();
     introGoneTimer = window.setTimeout(() => {
       introScreen.classList.add('is-gone');
       introScreen.setAttribute('aria-hidden', 'true');
-    }, 1100);
+    }, 1000);
   }
   function onIntroKey(event) {
     if (event.key === 'Tab') return;
     exitIntro();
   }
   if (introScreen) {
-    if (reduceMotion) {
-      introScreen.classList.add('is-gone');
-      introScreen.setAttribute('aria-hidden', 'true');
-      introExited = true;
-    } else {
-      introScreen.addEventListener('click', exitIntro);
-      introScreen.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          exitIntro();
-        }
-      });
-      window.addEventListener('keydown', onIntroKey);
-      introExitTimer = window.setTimeout(exitIntro, 2300);
-    }
-  }
-  if (heroWordmark) {
-    const revealHeroMark = () => {
-      if (reduceMotion) {
-        heroWordmark.classList.add('is-ready');
-        return;
+    introScreen.addEventListener('click', exitIntro);
+    introScreen.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        exitIntro();
       }
-      buildBlockWordmark(heroWordmark, true);
-      heroWordmark.classList.add('is-ready');
-    };
-    if (reduceMotion) revealHeroMark();
-    else window.setTimeout(revealHeroMark, 2600);
+    });
+    window.addEventListener('keydown', onIntroKey);
+    introExitTimer = window.setTimeout(exitIntro, 2600);
+  } else {
+    revealHeroMark();
   }
 
   // Fine-pointer desktop users get the small tracking square from the design.
@@ -311,13 +303,9 @@
         if (entries.some((entry) => entry.isIntersecting)) {
           schemaIsInView = true;
           schemaObserver.disconnect();
-          if (reduceMotion) {
-            // Keep the final state available without auto-playing motion.
-            return;
-          }
           scheduleNextSchemaStage();
         }
-      }, { threshold: 0.3 });
+      }, { threshold: 0.12 });
       schemaObserver.observe(canvas);
     } else {
       schemaIsInView = true;
@@ -356,7 +344,7 @@
   // The original concept animation gathers and then spreads the example spreadsheet files.
   const scatter = document.querySelector('.lp-scatter');
   if (scatter) {
-    if (reduceMotion || !('IntersectionObserver' in window)) {
+    if (!('IntersectionObserver' in window)) {
       scatter.classList.add('is-inview');
     } else {
       const scatterObserver = new IntersectionObserver((entries) => {
@@ -364,7 +352,7 @@
           scatter.classList.add('is-inview');
           scatterObserver.disconnect();
         }
-      }, { threshold: 0.3 });
+      }, { threshold: 0.12 });
       scatterObserver.observe(scatter);
     }
   }
