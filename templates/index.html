@@ -10,19 +10,21 @@
 <div class="lp-custom-cursor" id="lp-custom-cursor" aria-hidden="true"></div>
 <div class="lp-progress" aria-hidden="true"><span id="page-progress"></span></div>
 <header class="lp-nav">
-  <a class="lp-logo" href="#top" aria-label="File2Base, back to top"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a>
-  <nav class="lp-nav-links" aria-label="Presentation sections">
-    <a href="#problem" data-section="problem"><b>01</b><span>Problem</span></a>
-    <a href="#solution" data-section="solution"><b>02</b><span>Solution</span></a>
-    <a href="#how" data-section="how"><b>03</b><span>Process</span></a>
-    <a href="#concept" data-section="concept"><b>04</b><span>Product</span></a>
-    <a href="#engine" data-section="engine"><b>05</b><span>Intelligence</span></a>
-    <a href="#customers" data-section="customers"><b>06</b><span>Market</span></a>
-    <a href="#mvp" data-section="mvp"><b>07</b><span>MVP</span></a>
-    <a href="#roadmap" data-section="roadmap"><b>08</b><span>Roadmap</span></a>
-    <a href="#vision" data-section="vision"><b>09</b><span>Vision</span></a>
-  </nav>
-  <div class="lp-nav-right"><span id="section-counter">00 / 09</span><button type="button" id="nav-toggle" aria-expanded="false">Index</button><a class="lp-nav-cta" href="#workspace">Try prototype ↗</a></div>
+  <div class="lp-nav-inner">
+    <a class="lp-logo" href="#top" aria-label="File2Base, back to top"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a>
+    <nav class="lp-nav-links" aria-label="Presentation sections">
+      <a href="#problem" data-section="problem"><b>01</b><span>Problem</span></a>
+      <a href="#solution" data-section="solution"><b>02</b><span>Solution</span></a>
+      <a href="#how" data-section="how"><b>03</b><span>Process</span></a>
+      <a href="#concept" data-section="concept"><b>04</b><span>Product</span></a>
+      <a href="#engine" data-section="engine"><b>05</b><span>Intelligence</span></a>
+      <a href="#customers" data-section="customers"><b>06</b><span>Market</span></a>
+      <a href="#mvp" data-section="mvp"><b>07</b><span>MVP</span></a>
+      <a href="#roadmap" data-section="roadmap"><b>08</b><span>Roadmap</span></a>
+      <a href="#vision" data-section="vision"><b>09</b><span>Vision</span></a>
+    </nav>
+    <div class="lp-nav-right"><span id="section-counter">00 / 09</span><button type="button" id="nav-toggle" aria-expanded="false">Index</button><a class="lp-nav-cta" href="#workspace">Try prototype ↗</a></div>
+  </div>
   <nav class="lp-mobile-menu" id="mobile-menu" hidden>
     {% for sid, number, label in [('problem','01','The problem'),('solution','02','The solution'),('how','03','How it works'),('concept','04','Product concept'),('engine','05','Intelligence'),('customers','06','Customers'),('mvp','07','MVP'),('roadmap','08','Roadmap'),('vision','09','Vision'),('workspace','↗','Try the prototype')] %}
     <a href="#{{ sid }}"><b>{{ number }}</b>{{ label }}</a>
@@ -160,6 +162,12 @@
 <section id="vision" class="lp-section lp-vision">
   <div class="lp-wrap"><div class="lp-section-label"><b>S09</b><i></i><span>Closing vision</span></div><div class="lp-vision-type"><h2>From files</h2><h2>to infrastructure.</h2></div><div class="lp-vision-bottom"><div class="lp-vision-brand"><img class="lp-vision-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark-light.svg') }}" alt="File2Base"><p>Structure the data. Keep the human in control.</p></div><div class="lp-vision-actions"><a class="lp-button lp-button-light" href="#workspace">Try the prototype ↗</a><a class="lp-back-top" href="#top">↑ Back to start</a></div></div></div>
 </section>
-<footer class="lp-footer"><a class="lp-logo" href="#top" aria-label="File2Base"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a><span>FROM SCATTERED FILES TO STRUCTURED DATA</span><a href="#workspace">OPEN PROTOTYPE ↗</a></footer>
+<footer class="lp-footer">
+  <div class="lp-footer-inner">
+    <a class="lp-logo" href="#top" aria-label="File2Base"><img class="lp-logo-wordmark" src="{{ url_for('static', filename='img/file2base-wordmark.svg') }}" alt="File2Base"></a>
+    <span>FROM SCATTERED FILES TO STRUCTURED DATA</span>
+    <a href="#workspace">OPEN PROTOTYPE ↗</a>
+  </div>
+</footer>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/landing.js') }}"></script>{% endblock %}
